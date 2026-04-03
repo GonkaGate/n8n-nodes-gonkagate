@@ -1,0 +1,48 @@
+{
+	"name": "GonkaGate First Request",
+	"nodes": [
+		{
+			"parameters": {},
+			"id": "manual-trigger",
+			"name": "Manual Trigger",
+			"type": "n8n-nodes-base.manualTrigger",
+			"typeVersion": 1,
+			"position": [280, 300]
+		},
+		{
+			"parameters": {
+				"operation": "chatCompletion",
+				"model": {
+					"__rl": true,
+					"mode": "list",
+					"value": ""
+				},
+				"messages": "[\n  {\n    \"role\": \"user\",\n    \"content\": \"Hello from n8n and GonkaGate\"\n  }\n]"
+			},
+			"id": "gonkagate-first-request",
+			"name": "GonkaGate",
+			"type": "n8n-nodes-gonkagate.gonkaGate",
+			"typeVersion": 1,
+			"position": [580, 300]
+		}
+	],
+	"connections": {
+		"Manual Trigger": {
+			"main": [
+				[
+					{
+						"node": "GonkaGate",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"pinData": {},
+	"settings": {},
+	"active": false,
+	"meta": {
+		"templateCredsSetupCompleted": false
+	}
+}

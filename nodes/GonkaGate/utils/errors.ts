@@ -1,0 +1,163 @@
+import type { INode, JsonObject } from 'n8n-workflow';
+import { NodeApiError, NodeOperationError } from 'n8n-workflow';
+
+type ErrorWithContext = {
+	context?: {
+		itemIndex?: number;
+	};
+};
+
+const REQUEST_ID_HEADER_NAMES = [
+	'x-request-id',
+	'request-id',
+	'x-gonkagate-request-id',
+	'x-correlation-id',
+];
+
+const NETWORK_ERROR_MESSAGES: Record<string, string> = {
+	ECONNREFUSED: 'Could not connect to GonkaGate',
+	ENOTFOUND: 'Could not resolve the GonkaGate host name',
+	ETIMEDOUT: 'The GonkaGate request timed out',
+	ECONNRESET: 'The connection to GonkaGate was interrupted',
+	EHOSTUNREACH: 'The GonkaGate host was unreachable',
+};
+
+export function normalizeGonkaGateError(
+	node: INode,
+	error: unknown,
+	itemIndex: number,
+	operationName: string,
+): NodeApiError | NodeOperationError {
+	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
+		const contextualError = error as ErrorWithContext;
+		contextualError.context ??= {};
+		contextualError.context.itemIndex ??= itemIndex;
+		return error;
+	}
+
+	const requestId = extractRequestId(error);
+	const description = buildErrorDescription(error, requestId);
+	const primaryMessage = extractPrimaryMessage(error);
+	const errorCode = extractString(error, 'code');
+
+	if (errorCode && NETWORK_ERROR_MESSAGES[errorCode] !== undefined) {
+		return new NodeOperationError(node, error as Error, {
+			itemIndex,
+			message: NETWORK_ERROR_MESSAGES[errorCode],
+			description,
+		});
+	}
+
+	if (looksLikeHttpError(error)) {
+		return new NodeApiError(node, error as JsonObject, {
+			itemIndex,
+			description,
+		});
+	}
+
+	return new NodeOperationError(node, error as Error, {
+		itemIndex,
+		message: primaryMessage ?? `GonkaGate ${operationName} failed`,
+		description,
+	});
+}
+
+function buildErrorDescription(error: unknown, requestId?: string): string | undefined {
+	const parts = [extractPrimaryMessage(error)];
+
+	if (requestId !== undefined) {
+		parts.push(`Request ID: ${requestId}`);
+	}
+
+	const description = parts
+		.filter((part): part is string => part !== undefined && part.length > 0)
+		.join('\n');
+
+	return description.length > 0 ? description : undefined;
+}
+
+function extractPrimaryMessage(error: unknown): string | undefined {
+	const responseData = extractObject(extractObject(error, 'response'), 'data');
+	const nestedError = extractObject(responseData, 'error');
+
+	return (
+		extractString(nestedError, 'message') ??
+		extractString(responseData, 'message') ??
+		extractString(responseData, 'detail') ??
+		extractString(responseData, 'error_description') ??
+		extractString(responseData, 'description') ??
+		extractString(error, 'message')
+	);
+}
+
+function extractRequestId(error: unknown): string | undefined {
+	const headers =
+		extractObject(extractObject(error, 'response'), 'headers') ?? extractObject(error, 'headers');
+
+	if (headers === undefined) {
+		return undefined;
+	}
+
+	for (const headerName of REQUEST_ID_HEADER_NAMES) {
+		const headerValue = headers[headerName];
+
+		if (typeof headerValue === 'string' && headerValue.length > 0) {
+			return headerValue;
+		}
+
+		if (
+			Array.isArray(headerValue) &&
+			typeof headerValue[0] === 'string' &&
+			headerValue[0].length > 0
+		) {
+			return headerValue[0];
+		}
+	}
+
+	return undefined;
+}
+
+function looksLikeHttpError(error: unknown): boolean {
+	return (
+		extractObject(error, 'response') !== undefined ||
+		extractString(error, 'httpCode') !== undefined ||
+		extractString(error, 'statusCode') !== undefined ||
+		extractString(error, 'status') !== undefined
+	);
+}
+
+function extractObject(value: unknown, key?: string): Record<string, unknown> | undefined {
+	if (!isRecord(value)) {
+		return undefined;
+	}
+
+	if (key === undefined) {
+		return value;
+	}
+
+	const nested = value[key];
+
+	return isRecord(nested) ? nested : undefined;
+}
+
+function extractString(value: unknown, key: string): string | undefined {
+	if (!isRecord(value)) {
+		return undefined;
+	}
+
+	const nested = value[key];
+
+	if (typeof nested === 'string') {
+		return nested;
+	}
+
+	if (typeof nested === 'number') {
+		return String(nested);
+	}
+
+	return undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}

@@ -1,0 +1,76 @@
+{
+	"name": "@gonkagate/n8n-nodes-gonkagate",
+	"version": "0.1.0",
+	"description": "n8n community node package for GonkaGate root-node and chat-model workflows.",
+	"homepage": "https://github.com/GonkaGate/n8n-nodes-gonkagate#readme",
+	"bugs": {
+		"url": "https://github.com/GonkaGate/n8n-nodes-gonkagate/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/GonkaGate/n8n-nodes-gonkagate.git"
+	},
+	"license": "MIT",
+	"author": {
+		"name": "GonkaGate"
+	},
+	"type": "commonjs",
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "n8n-node build",
+		"build:watch": "tsc --watch",
+		"check:bootstrap": "node scripts/check-bootstrap.mjs",
+		"check:publish-context": "node scripts/check-publish-context.mjs",
+		"check:self-hosted-smoke": "node scripts/check-self-hosted-smoke.mjs",
+		"dev": "n8n-node dev",
+		"format:check": "prettier --check .",
+		"format:write": "prettier --write .",
+		"lint": "npm run format:check && npm run check:bootstrap",
+		"lint:fix": "npm run format:write",
+		"lint:n8n": "n8n-node lint",
+		"build:n8n": "n8n-node build",
+		"release": "n8n-node release",
+		"test:unit": "npm run build && node --test tests/**/*.test.js",
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"ci": "npm run lint && npm run typecheck && npm run build && npm run test:unit",
+		"prepublishOnly": "npm run check:publish-context"
+	},
+	"keywords": [
+		"n8n-community-node-package",
+		"gonkagate",
+		"gonka",
+		"gonka gateway",
+		"chat model",
+		"openai-compatible",
+		"n8n"
+	],
+	"packageManager": "npm@11.11.1",
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"aiNodeSdkVersion": 1,
+		"strict": true,
+		"credentials": [
+			"dist/credentials/GonkaGateApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/GonkaGate/GonkaGate.node.js",
+			"dist/nodes/LmChatGonkaGate/LmChatGonkaGate.node.js"
+		]
+	},
+	"devDependencies": {
+		"@n8n/node-cli": "^0.24.0",
+		"ai-node-sdk": "npm:@n8n/ai-node-sdk@0.4.1",
+		"eslint": "^9.39.4",
+		"prettier": "^3.8.1",
+		"release-it": "^19.2.4",
+		"typescript": "^5.9.3"
+	},
+	"peerDependencies": {
+		"ai-node-sdk": "npm:@n8n/ai-node-sdk@0.4.1",
+		"n8n-workflow": "*"
+	}
+}
