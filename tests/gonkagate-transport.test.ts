@@ -42,6 +42,7 @@ test('applyGonkaGateConnectionToRequest reuses the shared transport contract', (
 			apiKey: 'test-key',
 			defaultHeaders: {
 				Accept: 'application/json',
+				'X-Provider': 'gonkagate',
 			},
 		},
 		{
@@ -57,6 +58,7 @@ test('applyGonkaGateConnectionToRequest reuses the shared transport contract', (
 		url: '/models',
 		headers: {
 			Accept: 'application/json',
+			'X-Provider': 'gonkagate',
 			'X-Test': '1',
 			Authorization: 'Bearer test-key',
 		},

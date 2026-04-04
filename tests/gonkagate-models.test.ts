@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
-import { buildGonkaGateChatCompletionRequestBody } from '../shared/GonkaGate/chatParameters';
+import { buildGonkaGateChatCompletionRequestBody } from '../shared/GonkaGate/chatCompletionParameters';
 import { resolveGonkaGateBaseUrl } from '../shared/GonkaGate/credentials';
 import {
 	isRecoverableGonkaGateError,
@@ -11,10 +11,10 @@ import {
 } from '../shared/GonkaGate/errors';
 import {
 	buildGonkaGateModelSearchResults,
-	parseGonkaGateModelsResponse,
 	searchGonkaGateModels,
 } from '../shared/GonkaGate/modelDiscovery';
 import { resolveGonkaGateModelId } from '../shared/GonkaGate/modelId';
+import { parseGonkaGateModelsResponse } from '../shared/GonkaGate/modelsApi';
 import { GONKAGATE_CHAT_COMPLETION_OPERATION_NAME } from '../shared/GonkaGate/operationNames';
 import {
 	createLoadOptionsContext,
@@ -204,6 +204,25 @@ test('searchGonkaGateModels rethrows normalized internal node errors', async () 
 		),
 		/internal parse failure/,
 	);
+});
+
+test('searchGonkaGateModels suppresses pre-normalized recoverable API errors', async () => {
+	const results = await searchGonkaGateModels.call(
+		createLoadOptionsContext({
+			credentialsSelected: true,
+			httpRequest: async () => {
+				throw new NodeApiError(createNode(), {
+					status: 503,
+					data: {
+						message: 'temporarily unavailable',
+					},
+				});
+			},
+		}),
+		'',
+	);
+
+	assert.deepEqual(results, { results: [] });
 });
 
 test('serializeGonkaGateError keeps normalized request metadata for continueOnFail output', () => {

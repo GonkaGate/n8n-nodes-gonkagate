@@ -47,7 +47,10 @@ export function applyGonkaGateConnectionToRequest(
 ): IHttpRequestOptions {
 	requestOptions.baseURL = requestOptions.baseURL ?? connection.baseUrl;
 	requestOptions.headers = {
-		...buildGonkaGateDefaultHeaders(normalizeHeaders(requestOptions.headers)),
+		...buildGonkaGateDefaultHeaders({
+			...normalizeHeaders(connection.defaultHeaders),
+			...normalizeHeaders(requestOptions.headers),
+		}),
 		Authorization: `Bearer ${connection.apiKey}`,
 	};
 

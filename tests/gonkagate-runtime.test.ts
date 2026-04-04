@@ -5,6 +5,10 @@ import { NodeOperationError } from 'n8n-workflow';
 
 import { GonkaGateApi } from '../credentials/GonkaGateApi.credentials';
 import { GonkaGate } from '../nodes/GonkaGate/GonkaGate.node';
+import {
+	GONKAGATE_CHAT_COMPLETION_OPERATION,
+	GONKAGATE_LIST_MODELS_OPERATION,
+} from '../nodes/GonkaGate/operations';
 import { LmChatGonkaGate } from '../nodes/LmChatGonkaGate/LmChatGonkaGate.node';
 import { createGonkaGateChatModelSupplier } from '../shared/GonkaGate/chatModel';
 import {
@@ -35,7 +39,7 @@ test('GonkaGate.execute composes the shared request contract at the node boundar
 		createExecuteContext({
 			parameters: [
 				{
-					[GONKAGATE_OPERATION_PARAMETER_NAME]: 'chatCompletion',
+					[GONKAGATE_OPERATION_PARAMETER_NAME]: GONKAGATE_CHAT_COMPLETION_OPERATION,
 					[GONKAGATE_MODEL_PARAMETER_NAME]: ' test-model ',
 					[GONKAGATE_MESSAGES_PARAMETER_NAME]: '[{"role":"user","content":"Hello from n8n"}]',
 				},
@@ -86,7 +90,7 @@ test('GonkaGate.execute serializes recoverable upstream failures when continueOn
 			continueOnFail: true,
 			parameters: [
 				{
-					[GONKAGATE_OPERATION_PARAMETER_NAME]: 'chatCompletion',
+					[GONKAGATE_OPERATION_PARAMETER_NAME]: GONKAGATE_CHAT_COMPLETION_OPERATION,
 					[GONKAGATE_MODEL_PARAMETER_NAME]: 'test-model',
 					[GONKAGATE_MESSAGES_PARAMETER_NAME]: '[{"role":"user","content":"Hello from n8n"}]',
 				},
@@ -131,7 +135,7 @@ test('GonkaGate.execute normalizes raw pre-request failures at the node boundary
 			continueOnFail: true,
 			parameters: [
 				{
-					[GONKAGATE_OPERATION_PARAMETER_NAME]: 'chatCompletion',
+					[GONKAGATE_OPERATION_PARAMETER_NAME]: GONKAGATE_CHAT_COMPLETION_OPERATION,
 					[GONKAGATE_MODEL_PARAMETER_NAME]: 'test-model',
 				},
 			],
@@ -151,7 +155,7 @@ test('GonkaGate.execute normalizes raw pre-request failures at the node boundary
 				}
 
 				if (parameterName === GONKAGATE_OPERATION_PARAMETER_NAME) {
-					return 'chatCompletion';
+					return GONKAGATE_CHAT_COMPLETION_OPERATION;
 				}
 
 				if (parameterName === GONKAGATE_MODEL_PARAMETER_NAME) {
@@ -201,6 +205,33 @@ test('GonkaGateApi.authenticate applies the shared credential authentication pol
 		Authorization: 'Bearer test-key',
 		'X-Test': '1',
 	});
+});
+
+test('GonkaGate.execute normalizes malformed /models payloads at the shared endpoint boundary', async () => {
+	const node = new GonkaGate();
+
+	const result = await node.execute.call(
+		createExecuteContext({
+			continueOnFail: true,
+			parameters: [{ [GONKAGATE_OPERATION_PARAMETER_NAME]: GONKAGATE_LIST_MODELS_OPERATION }],
+			httpRequest: async () => ({
+				data: {
+					id: 'not-an-array',
+				},
+			}),
+		}),
+	);
+
+	assert.deepEqual(result, [
+		[
+			{
+				json: {
+					error: 'GonkaGate models response must contain a data array',
+				},
+				pairedItem: undefined,
+			},
+		],
+	]);
 });
 
 test('createGonkaGateChatModelSupplier forwards the GonkaGate AI-model contract to the SDK seam', async () => {
@@ -333,7 +364,7 @@ test('GonkaGate.execute routes listModels through the operation registry', async
 
 	const result = await node.execute.call(
 		createExecuteContext({
-			parameters: [{ [GONKAGATE_OPERATION_PARAMETER_NAME]: 'listModels' }],
+			parameters: [{ [GONKAGATE_OPERATION_PARAMETER_NAME]: GONKAGATE_LIST_MODELS_OPERATION }],
 			httpRequest: async (_credentialType, requestOptions) => {
 				requests.push({
 					method: requestOptions.method,
@@ -358,6 +389,23 @@ test('GonkaGate.execute routes listModels through the operation registry', async
 			},
 		],
 	]);
+});
+
+test('GonkaGate.execute rejects unsupported persisted operation values explicitly', async () => {
+	const node = new GonkaGate();
+
+	await assert.rejects(
+		node.execute.call(
+			createExecuteContext({
+				parameters: [{ [GONKAGATE_OPERATION_PARAMETER_NAME]: 'legacyOperation' }],
+				httpRequest: async () => {
+					throw new Error('httpRequest should not be called');
+				},
+			}),
+		),
+		(error) =>
+			error instanceof NodeOperationError && error.message === 'Unsupported GonkaGate operation',
+	);
 });
 
 test('GonkaGateApi test request reuses the normalized runtime transport defaults', () => {

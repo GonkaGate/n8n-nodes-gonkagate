@@ -3,10 +3,10 @@ import { NodeOperationError } from 'n8n-workflow';
 
 import {
 	GONKAGATE_BASE_URL_MIGRATION_MESSAGE,
-	GONKAGATE_MODELS_PATH,
 	LEGACY_GONKAGATE_BASE_URL_PLACEHOLDER,
 } from './constants';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
+import { createListModelsRequestOptions } from './modelsApi';
 import {
 	applyGonkaGateConnectionToRequest,
 	buildGonkaGateRequestOptions,
@@ -92,8 +92,5 @@ export async function authenticateGonkaGateRequest(
 }
 
 export function createGonkaGateCredentialTestRequest(): IHttpRequestOptions {
-	return buildGonkaGateRequestOptions({
-		method: 'GET',
-		url: GONKAGATE_MODELS_PATH,
-	});
+	return buildGonkaGateRequestOptions(createListModelsRequestOptions());
 }

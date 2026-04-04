@@ -19,13 +19,17 @@ import {
 	createGonkaGateOperationProperty,
 	executeGonkaGateOperation,
 	GONKAGATE_DEFAULT_OPERATION,
+	getGonkaGateOperationMethods,
 	getGonkaGateOperationDisplayName,
 	getGonkaGateOperationProperties,
-	type GonkaGateOperation,
+	resolveGonkaGateOperation,
 } from './operations';
 
 export class GonkaGate implements INodeType {
-	methods = GONKAGATE_MODEL_SELECTOR_FEATURES.methods;
+	methods = {
+		...GONKAGATE_MODEL_SELECTOR_FEATURES.methods,
+		...(getGonkaGateOperationMethods() ?? {}),
+	};
 
 	description: INodeTypeDescription = {
 		displayName: GONKAGATE_NODE_DISPLAY_NAME,
@@ -58,15 +62,16 @@ export class GonkaGate implements INodeType {
 		for (let itemIndex = 0; itemIndex < itemCount; itemIndex++) {
 			let operationName = 'Operation';
 
-			try {
-				const operation = this.getNodeParameter(
-					GONKAGATE_OPERATION_PARAMETER_NAME,
-					itemIndex,
-					GONKAGATE_DEFAULT_OPERATION,
-				) as GonkaGateOperation;
-				operationName = getGonkaGateOperationDisplayName(operation);
+				try {
+					const rawOperation = this.getNodeParameter(
+						GONKAGATE_OPERATION_PARAMETER_NAME,
+						itemIndex,
+						GONKAGATE_DEFAULT_OPERATION,
+					);
+					const operation = resolveGonkaGateOperation(this.getNode(), rawOperation, itemIndex);
+					operationName = getGonkaGateOperationDisplayName(operation);
 
-				const operationData = await executeGonkaGateOperation(this, operation, itemIndex);
+					const operationData = await executeGonkaGateOperation(this, operation, itemIndex);
 
 				for (const data of operationData) {
 					returnData.push({

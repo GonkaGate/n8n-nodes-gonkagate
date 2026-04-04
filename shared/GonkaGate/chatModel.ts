@@ -2,11 +2,11 @@ import { supplyModel } from 'ai-node-sdk';
 import type { OpenAiModel } from 'ai-node-sdk';
 import type { ISupplyDataFunctions, SupplyData } from 'n8n-workflow';
 
-import { resolveRequiredGonkaGateConnectionConfig } from './credentials';
 import {
-	resolveGonkaGateChatParametersFromContext,
-	type ResolvedGonkaGateChatParameters,
-} from './chatParameters';
+	resolveGonkaGateChatModelParametersFromContext,
+} from './chatModelParameters';
+import type { ResolvedGonkaGateChatParameters } from './chatParameters';
+import { resolveRequiredGonkaGateConnectionConfig } from './credentials';
 import { normalizeGonkaGateError } from './errors';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
 import { GONKAGATE_CHAT_MODEL_DISPLAY_NAME } from './metadata';
@@ -45,7 +45,7 @@ export function createGonkaGateChatModelSupplier(
 	): Promise<SupplyData> {
 		try {
 			const credentials = await context.getCredentials(GONKAGATE_CREDENTIAL_NAME, itemIndex);
-			const chatParameters = resolveGonkaGateChatParametersFromContext(context, itemIndex);
+			const chatParameters = resolveGonkaGateChatModelParametersFromContext(context, itemIndex);
 
 			return await supplyModelDependency(
 				context,

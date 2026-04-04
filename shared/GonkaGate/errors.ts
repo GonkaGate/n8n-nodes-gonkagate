@@ -37,6 +37,7 @@ export function normalizeGonkaGateError(
 	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
 		attachErrorContext(error, itemIndex, {
 			requestId: extractRequestId(error),
+			recoverable: inferRecoverableNodeError(error),
 		});
 		return error;
 	}
@@ -145,6 +146,26 @@ export function isRecoverableGonkaGateError(error: unknown): boolean {
 	return (
 		(errorCode !== undefined && NETWORK_ERROR_MESSAGES[errorCode] !== undefined) ||
 		looksLikeHttpError(error)
+	);
+}
+
+function inferRecoverableNodeError(
+	error: NodeApiError | NodeOperationError,
+): boolean | undefined {
+	const contextualRecoverable = getErrorContext(error)?.recoverable;
+
+	if (contextualRecoverable !== undefined) {
+		return contextualRecoverable;
+	}
+
+	if (error instanceof NodeApiError) {
+		const httpCode = Number(error.httpCode);
+
+		return Number.isFinite(httpCode) && (httpCode === 408 || httpCode === 429 || httpCode >= 500);
+	}
+
+	return Object.values(NETWORK_ERROR_MESSAGES).some(
+		(networkErrorMessage) => networkErrorMessage === error.message,
 	);
 }
 

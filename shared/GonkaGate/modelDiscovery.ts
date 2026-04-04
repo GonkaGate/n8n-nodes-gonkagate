@@ -9,20 +9,9 @@ import { NodeApiError } from 'n8n-workflow';
 import { hasGonkaGateCredential } from './credentials';
 import { isRecoverableGonkaGateError } from './errors';
 import {
-	createListModelsRequestOptions,
-	parseGonkaGateModelsApiResponse,
-	type GonkaGateModelsResponse,
+	fetchGonkaGateModels as fetchGonkaGateModelsCatalog,
+	type GonkaGateModelRecord,
 } from './modelsApi';
-import { GONKAGATE_LIST_MODELS_OPERATION_NAME } from './operationNames';
-import { gonkaGateRequest } from './request';
-
-export type GonkaGateModelRecord = IDataObject & {
-	id: string;
-	name?: string;
-	description?: string;
-	pricing?: IDataObject;
-	created?: number;
-};
 
 const MAX_MODEL_RESULTS = 100;
 
@@ -55,16 +44,7 @@ export async function searchGonkaGateModels(
 export async function fetchGonkaGateModels(
 	context: ILoadOptionsFunctions,
 ): Promise<GonkaGateModelRecord[]> {
-	const response = await gonkaGateRequest<GonkaGateModelsResponse>(
-		context,
-		GONKAGATE_LIST_MODELS_OPERATION_NAME,
-		createListModelsRequestOptions(),
-		{
-			parseResponse: parseGonkaGateModelsApiResponse,
-		},
-	);
-
-	return parseGonkaGateModelsResponse(response);
+	return await fetchGonkaGateModelsCatalog(context);
 }
 
 function shouldSuppressDiscoveryError(error: unknown): boolean {
@@ -79,20 +59,6 @@ function shouldSuppressDiscoveryError(error: unknown): boolean {
 	const httpCode = Number(error.httpCode);
 
 	return Number.isFinite(httpCode) && (httpCode === 408 || httpCode === 429 || httpCode >= 500);
-}
-
-export function parseGonkaGateModelsResponse(
-	response: GonkaGateModelsResponse,
-): GonkaGateModelRecord[] {
-	if (!Array.isArray(response.data)) {
-		throw new Error('GonkaGate models response must contain a data array');
-	}
-
-	return response.data
-		.filter(isRecord)
-		.map((model) => toModelRecord(model))
-		.filter((model): model is GonkaGateModelRecord => model !== null)
-		.sort(compareModels);
 }
 
 export function buildGonkaGateModelSearchResults(
@@ -110,37 +76,6 @@ export function buildGonkaGateModelSearchResults(
 		value: model.id,
 		description: buildModelSearchDescription(model),
 	}));
-}
-
-function toModelRecord(model: Record<string, unknown>): GonkaGateModelRecord | null {
-	const id = typeof model.id === 'string' ? model.id.trim() : '';
-
-	if (id.length === 0) {
-		return null;
-	}
-
-	const record: GonkaGateModelRecord = {
-		...model,
-		id,
-	};
-
-	if (typeof model.name === 'string' && model.name.trim().length > 0) {
-		record.name = model.name.trim();
-	}
-
-	if (typeof model.description === 'string' && model.description.trim().length > 0) {
-		record.description = model.description.trim();
-	}
-
-	if (typeof model.created === 'number' && Number.isFinite(model.created)) {
-		record.created = model.created;
-	}
-
-	if (isRecord(model.pricing)) {
-		record.pricing = model.pricing as IDataObject;
-	}
-
-	return record;
 }
 
 function matchesModelFilter(model: GonkaGateModelRecord, filter: string): boolean {
@@ -171,23 +106,6 @@ function buildModelSearchDescription(model: GonkaGateModelRecord): string | unde
 	].filter((part): part is string => part !== undefined && part.length > 0);
 
 	return parts.length > 0 ? parts.join(' | ') : undefined;
-}
-
-function compareModels(left: GonkaGateModelRecord, right: GonkaGateModelRecord): number {
-	const leftDeprecated = getBooleanValue(left, 'deprecated') ? 1 : 0;
-	const rightDeprecated = getBooleanValue(right, 'deprecated') ? 1 : 0;
-
-	if (leftDeprecated !== rightDeprecated) {
-		return leftDeprecated - rightDeprecated;
-	}
-
-	const createdDifference = (right.created ?? 0) - (left.created ?? 0);
-
-	if (createdDifference !== 0) {
-		return createdDifference;
-	}
-
-	return left.id.localeCompare(right.id);
 }
 
 function formatContextLength(model: GonkaGateModelRecord): string | undefined {
@@ -245,20 +163,10 @@ function truncate(value: string | undefined, maxLength: number): string | undefi
 	return `${value.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 function getStringValue(record: Record<string, unknown>, key: string): string | undefined {
 	const value = record[key];
 
 	return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
-function getBooleanValue(record: Record<string, unknown>, key: string): boolean | undefined {
-	const value = record[key];
-
-	return typeof value === 'boolean' ? value : undefined;
 }
 
 function getNumberValue(record: Record<string, unknown>, key: string): number | undefined {

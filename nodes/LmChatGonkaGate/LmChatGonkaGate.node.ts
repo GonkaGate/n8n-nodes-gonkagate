@@ -6,7 +6,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import { gonkaGateChatModelProperties } from '../../shared/GonkaGate/chatParameters';
+import { gonkaGateChatModelProperties } from '../../shared/GonkaGate/chatModelParameters';
 import { supplyGonkaGateChatModel } from '../../shared/GonkaGate/chatModel';
 import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
 import { GONKAGATE_MODEL_SELECTOR_FEATURES } from '../../shared/GonkaGate/modelParameter';
