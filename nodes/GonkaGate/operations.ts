@@ -5,8 +5,7 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 
-import { createGonkaGateModelSelectorProperty } from '../shared/GonkaGate/models';
-import { executeChatCompletion } from './actions/chatCompletion';
+import { executeChatCompletion, gonkaGateChatCompletionProperties } from './actions/chatCompletion';
 import { executeListModels } from './actions/listModels';
 
 type GonkaGateOperationDefinition = {
@@ -22,18 +21,7 @@ const GONKAGATE_OPERATION_DEFINITIONS = {
 		name: 'Chat Completion',
 		action: 'Create a chat completion',
 		description: 'Send a non-streaming chat completion request to GonkaGate',
-		properties: [
-			createGonkaGateModelSelectorProperty(),
-			{
-				displayName: 'Messages (JSON)',
-				name: 'messages',
-				type: 'json',
-				default: '[\n  {\n    "role": "user",\n    "content": "Hello from n8n"\n  }\n]',
-				required: true,
-				description:
-					'OpenAI-compatible chat messages sent to POST /v1/chat/completions. GonkaGate-specific advanced extensions stay out of the MVP surface for now.',
-			},
-		],
+		properties: gonkaGateChatCompletionProperties,
 		execute: executeChatCompletion,
 	},
 	listModels: {

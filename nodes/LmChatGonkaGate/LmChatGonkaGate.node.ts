@@ -4,13 +4,16 @@ import type {
 	ISupplyDataFunctions,
 	SupplyData,
 } from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
+
 import {
 	createGonkaGateChatModelOptionsProperty,
+	supplyGonkaGateChatModel,
+} from '../shared/GonkaGate/chatModel';
+import {
 	createGonkaGateModelSearchMethods,
 	createGonkaGateModelSelectorProperty,
-	supplyGonkaGateChatModel,
-} from '../shared/GonkaGate';
-import { NodeConnectionTypes } from 'n8n-workflow';
+} from '../shared/GonkaGate/models';
 
 export class LmChatGonkaGate implements INodeType {
 	methods = createGonkaGateModelSearchMethods();

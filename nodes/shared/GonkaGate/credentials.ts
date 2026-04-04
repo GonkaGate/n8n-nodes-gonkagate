@@ -1,4 +1,4 @@
-import type { INode } from 'n8n-workflow';
+import type { ICredentialDataDecryptedObject, IHttpRequestOptions, INode } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
 import {
@@ -9,6 +9,12 @@ import {
 export type GonkaGateCredentialData = {
 	apiKey?: string;
 	url?: string;
+};
+
+export type GonkaGateConnectionConfig = {
+	baseUrl: string;
+	apiKey: string;
+	defaultHeaders: Record<string, string>;
 };
 
 export function resolveGonkaGateBaseUrl(rawUrl: unknown): string {
@@ -31,6 +37,25 @@ export function resolveGonkaGateApiKey(rawApiKey: unknown): string {
 	return apiKey;
 }
 
+export function buildGonkaGateDefaultHeaders(
+	headers: Record<string, string> = {},
+): Record<string, string> {
+	return {
+		Accept: 'application/json',
+		...headers,
+	};
+}
+
+export function resolveGonkaGateConnectionConfig(
+	credentials: GonkaGateCredentialData,
+): GonkaGateConnectionConfig {
+	return {
+		baseUrl: resolveGonkaGateBaseUrl(credentials.url),
+		apiKey: resolveGonkaGateApiKey(credentials.apiKey),
+		defaultHeaders: buildGonkaGateDefaultHeaders(),
+	};
+}
+
 export function resolveRequiredGonkaGateApiKey(
 	node: INode,
 	rawApiKey: unknown,
@@ -43,4 +68,34 @@ export function resolveRequiredGonkaGateApiKey(
 			itemIndex,
 		});
 	}
+}
+
+export function resolveRequiredGonkaGateConnectionConfig(
+	node: INode,
+	credentials: GonkaGateCredentialData,
+	itemIndex: number,
+): GonkaGateConnectionConfig {
+	try {
+		return resolveGonkaGateConnectionConfig(credentials);
+	} catch (error) {
+		throw new NodeOperationError(node, error as Error, {
+			itemIndex,
+		});
+	}
+}
+
+export async function authenticateGonkaGateRequest(
+	credentials: ICredentialDataDecryptedObject,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	const connection = resolveGonkaGateConnectionConfig(credentials);
+
+	requestOptions.baseURL = requestOptions.baseURL ?? connection.baseUrl;
+	requestOptions.headers = {
+		...connection.defaultHeaders,
+		...(requestOptions.headers ?? {}),
+		Authorization: `Bearer ${connection.apiKey}`,
+	};
+
+	return requestOptions;
 }

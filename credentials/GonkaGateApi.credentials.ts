@@ -7,12 +7,8 @@ import type {
 	Icon,
 } from 'n8n-workflow';
 
-import {
-	GONKAGATE_BASE_URL,
-	GONKAGATE_MODELS_PATH,
-	resolveGonkaGateApiKey,
-	resolveGonkaGateBaseUrl,
-} from '../nodes/shared/GonkaGate';
+import { authenticateGonkaGateRequest } from '../nodes/shared/GonkaGate/credentials';
+import { GONKAGATE_BASE_URL, GONKAGATE_MODELS_PATH } from '../nodes/shared/GonkaGate/constants';
 
 export class GonkaGateApi implements ICredentialType {
 	name = 'gonkaGateApi';
@@ -55,12 +51,6 @@ export class GonkaGateApi implements ICredentialType {
 		credentials: ICredentialDataDecryptedObject,
 		requestOptions: IHttpRequestOptions,
 	): Promise<IHttpRequestOptions> {
-		const url = resolveGonkaGateBaseUrl(credentials.url);
-
-		requestOptions.baseURL = requestOptions.baseURL ?? url;
-		requestOptions.headers ??= {};
-		requestOptions.headers.Authorization = `Bearer ${resolveGonkaGateApiKey(credentials.apiKey)}`;
-
-		return requestOptions;
+		return await authenticateGonkaGateRequest(credentials, requestOptions);
 	}
 }

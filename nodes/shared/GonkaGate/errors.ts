@@ -4,6 +4,7 @@ import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 type GonkaGateErrorContext = {
 	itemIndex?: number;
 	requestId?: string;
+	recoverable?: boolean;
 };
 
 type ErrorWithContext = {
@@ -34,7 +35,9 @@ export function normalizeGonkaGateError(
 	operationName: string,
 ): NodeApiError | NodeOperationError {
 	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
-		attachErrorContext(error, itemIndex, extractRequestId(error));
+		attachErrorContext(error, itemIndex, {
+			requestId: extractRequestId(error),
+		});
 		return error;
 	}
 
@@ -51,7 +54,10 @@ export function normalizeGonkaGateError(
 				description,
 			}),
 			itemIndex,
-			requestId,
+			{
+				requestId,
+				recoverable: true,
+			},
 		);
 	}
 
@@ -62,7 +68,10 @@ export function normalizeGonkaGateError(
 				description,
 			}),
 			itemIndex,
-			requestId,
+			{
+				requestId,
+				recoverable: true,
+			},
 		);
 	}
 
@@ -73,7 +82,10 @@ export function normalizeGonkaGateError(
 			description,
 		}),
 		itemIndex,
-		requestId,
+		{
+			requestId,
+			recoverable: false,
+		},
 	);
 }
 
@@ -125,7 +137,7 @@ export function serializeGonkaGateError(error: unknown): IDataObject {
 
 export function isRecoverableGonkaGateError(error: unknown): boolean {
 	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
-		return true;
+		return (error as ErrorWithContext).context?.recoverable === true;
 	}
 
 	const errorCode = extractString(error, 'code');
@@ -139,14 +151,21 @@ export function isRecoverableGonkaGateError(error: unknown): boolean {
 function attachErrorContext<T extends NodeApiError | NodeOperationError>(
 	error: T,
 	itemIndex: number,
-	requestId?: string,
+	context: {
+		requestId?: string;
+		recoverable?: boolean;
+	},
 ): T {
 	const contextualError = error as ErrorWithContext;
 	contextualError.context ??= {};
 	contextualError.context.itemIndex ??= itemIndex;
 
-	if (requestId !== undefined && requestId.length > 0) {
-		contextualError.context.requestId ??= requestId;
+	if (context.requestId !== undefined && context.requestId.length > 0) {
+		contextualError.context.requestId ??= context.requestId;
+	}
+
+	if (context.recoverable !== undefined) {
+		contextualError.context.recoverable ??= context.recoverable;
 	}
 
 	return error;

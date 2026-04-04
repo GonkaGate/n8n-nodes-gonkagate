@@ -1,6 +1,7 @@
 import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
 
-import { GONKAGATE_MODELS_PATH, gonkaGateRequest } from '../../shared/GonkaGate';
+import { GONKAGATE_MODELS_PATH } from '../../shared/GonkaGate/constants';
+import { gonkaGateRequest } from '../../shared/GonkaGate/request';
 
 export async function executeListModels(
 	context: IExecuteFunctions,

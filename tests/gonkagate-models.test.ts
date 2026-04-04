@@ -1,18 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { ILoadOptionsFunctions, INode } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 import {
 	buildGonkaGateChatModelOptions,
-	buildGonkaGateModelSearchResults,
 	createGonkaGateChatModelOptionsProperty,
-	normalizeGonkaGateError,
+} from '../nodes/shared/GonkaGate/chatModel';
+import { normalizeGonkaGateError, serializeGonkaGateError } from '../nodes/shared/GonkaGate/errors';
+import {
+	buildGonkaGateModelSearchResults,
 	parseGonkaGateModelsResponse,
-	resolveGonkaGateModelId,
-	resolveGonkaGateBaseUrl,
 	searchGonkaGateModels,
-	serializeGonkaGateError,
-} from '../nodes/shared/GonkaGate';
+} from '../nodes/shared/GonkaGate/modelDiscovery';
+import { resolveGonkaGateModelId } from '../nodes/shared/GonkaGate/models';
+import { resolveGonkaGateBaseUrl } from '../nodes/shared/GonkaGate/credentials';
 
 test('parseGonkaGateModelsResponse sorts active models before deprecated ones', () => {
 	const models = parseGonkaGateModelsResponse({
@@ -133,6 +135,21 @@ test('searchGonkaGateModels rethrows unexpected internal errors', async () => {
 			'',
 		),
 		/unexpected parser failure/,
+	);
+});
+
+test('searchGonkaGateModels rethrows normalized internal node errors', async () => {
+	await assert.rejects(
+		searchGonkaGateModels.call(
+			createLoadOptionsContext({
+				credentialsSelected: true,
+				httpRequest: async () => {
+					throw new NodeOperationError(createNode(), 'internal parse failure');
+				},
+			}),
+			'',
+		),
+		/internal parse failure/,
 	);
 });
 

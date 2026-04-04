@@ -7,6 +7,7 @@ import type {
 	ISupplyDataFunctions,
 } from 'n8n-workflow';
 
+import { buildGonkaGateDefaultHeaders } from './credentials';
 import { normalizeGonkaGateError } from './errors';
 
 type GonkaGateRequestContext = IExecuteFunctions | ILoadOptionsFunctions | ISupplyDataFunctions;
@@ -24,11 +25,10 @@ export async function gonkaGateRequest<T extends IDataObject = IDataObject>(
 			{
 				json: true,
 				...requestOptions,
-				headers: {
-					Accept: 'application/json',
+				headers: buildGonkaGateDefaultHeaders({
 					...(requestOptions.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
 					...requestOptions.headers,
-				},
+				}),
 			},
 		)) as T;
 	} catch (error) {
