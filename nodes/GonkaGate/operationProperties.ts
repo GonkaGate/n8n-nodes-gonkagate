@@ -13,7 +13,7 @@ export function createGonkaGateOperationProperty(): INodeProperties {
 		default: GONKAGATE_DEFAULT_OPERATION,
 		options: getGonkaGateOperationDefinitions().map((operationDefinition) => ({
 			name: operationDefinition.displayName,
-			value: operationDefinition.type,
+			value: operationDefinition.operation,
 			action: operationDefinition.action,
 			description: operationDefinition.description,
 		})),
@@ -23,7 +23,7 @@ export function createGonkaGateOperationProperty(): INodeProperties {
 export function getGonkaGateOperationProperties(): INodeProperties[] {
 	return getGonkaGateOperationDefinitions().flatMap((operationDefinition) =>
 		operationDefinition.properties.map((property: INodeProperties) =>
-			withOperationDisplayOptions(operationDefinition.type, property),
+			withOperationDisplayOptions(operationDefinition.operation, property),
 		),
 	);
 }

@@ -9,7 +9,7 @@ export type GonkaGateModelsResponse = IDataObject & {
 	data: unknown[];
 };
 
-export function createListModelsRequestOptions(): GonkaGateRequestOptions {
+export function createGonkaGateListModelsRequestOptions(): GonkaGateRequestOptions {
 	return {
 		method: 'GET',
 		url: GONKAGATE_MODELS_PATH,
@@ -17,7 +17,9 @@ export function createListModelsRequestOptions(): GonkaGateRequestOptions {
 }
 
 export function parseGonkaGateModelsApiResponse(response: unknown): GonkaGateModelsResponse {
-	const modelsResponse = parseGonkaGateDataObjectResponse<IDataObject & { data?: unknown }>(response);
+	const modelsResponse = parseGonkaGateDataObjectResponse<IDataObject & { data?: unknown }>(
+		response,
+	);
 
 	if (!Array.isArray(modelsResponse.data)) {
 		throw new Error('GonkaGate models response must contain a data array');
@@ -36,7 +38,7 @@ export type GonkaGateModelRecord = IDataObject & {
 
 type GonkaGateModelsRequestContext = Parameters<typeof gonkaGateRequest>[0];
 
-export async function requestGonkaGateModels(
+export async function requestGonkaGateModelsResponse(
 	context: GonkaGateModelsRequestContext,
 	input: {
 		itemIndex?: number;
@@ -45,7 +47,7 @@ export async function requestGonkaGateModels(
 	return await gonkaGateRequest<GonkaGateModelsResponse>(
 		context,
 		GONKAGATE_LIST_MODELS_OPERATION_NAME,
-		createListModelsRequestOptions(),
+		createGonkaGateListModelsRequestOptions(),
 		{
 			itemIndex: input.itemIndex,
 			parseResponse: parseGonkaGateModelsApiResponse,
@@ -53,16 +55,16 @@ export async function requestGonkaGateModels(
 	);
 }
 
-export async function fetchGonkaGateModels(
+export async function fetchGonkaGateModelCatalog(
 	context: GonkaGateModelsRequestContext,
 	input: {
 		itemIndex?: number;
 	} = {},
 ): Promise<GonkaGateModelRecord[]> {
-	return parseGonkaGateModelsResponse(await requestGonkaGateModels(context, input));
+	return parseGonkaGateModelCatalog(await requestGonkaGateModelsResponse(context, input));
 }
 
-export function parseGonkaGateModelsResponse(
+export function parseGonkaGateModelCatalog(
 	response: GonkaGateModelsResponse,
 ): GonkaGateModelRecord[] {
 	return response.data

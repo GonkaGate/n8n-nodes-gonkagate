@@ -18,7 +18,7 @@ test('GonkaGateApi.authenticate applies the shared credential authentication pol
 	const requestOptions = await credential.authenticate(
 		{
 			apiKey: ' test-key ',
-			url: ' https://api.gonkagate.com/v1 ',
+			baseUrl: ' https://api.gonkagate.com/v1 ',
 		},
 		{
 			url: '/models',

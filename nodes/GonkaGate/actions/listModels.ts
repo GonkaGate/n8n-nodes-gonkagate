@@ -1,6 +1,6 @@
 import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 
-import { requestGonkaGateModels } from '../../../shared/GonkaGate/modelsApi';
+import { requestGonkaGateModelsResponse } from '../../../shared/GonkaGate/modelsApi';
 
 export const GONKAGATE_LIST_MODELS_OPERATION_ACTION = 'List models exposed by GonkaGate';
 
@@ -11,7 +11,7 @@ export async function executeListModels(
 	context: IExecuteFunctions,
 	itemIndex: number,
 ): Promise<INodeExecutionData[]> {
-	const response = await requestGonkaGateModels(context, { itemIndex });
+	const response = await requestGonkaGateModelsResponse(context, { itemIndex });
 
 	return [{ json: response }];
 }

@@ -2,7 +2,7 @@ import type { IDataObject, INodeProperties } from 'n8n-workflow';
 
 import { GONKAGATE_OPTIONS_PARAMETER_NAME } from './parameters';
 
-type GonkaGateChatOptionTarget = 'requestBody' | 'aiModel';
+type GonkaGateChatOptionSurface = 'requestBody' | 'aiModel';
 
 export type GonkaGateChatOptionKey =
 	| 'frequencyPenalty'
@@ -16,13 +16,13 @@ export type GonkaGateChatOptionKey =
 export type GonkaGateChatOptionValues = Partial<Record<GonkaGateChatOptionKey, number>>;
 
 type GonkaGateChatOptionDefinition = {
-	targets: readonly GonkaGateChatOptionTarget[];
+	surfaces: readonly GonkaGateChatOptionSurface[];
 	property: INodeProperties;
 };
 
 const GONKAGATE_CHAT_OPTION_DEFINITIONS = {
 	frequencyPenalty: {
-		targets: ['requestBody', 'aiModel'],
+		surfaces: ['requestBody', 'aiModel'],
 		property: {
 			displayName: 'Frequency Penalty',
 			name: 'frequencyPenalty',
@@ -37,7 +37,7 @@ const GONKAGATE_CHAT_OPTION_DEFINITIONS = {
 		},
 	},
 	maxRetries: {
-		targets: ['aiModel'],
+		surfaces: ['aiModel'],
 		property: {
 			displayName: 'Max Retries',
 			name: 'maxRetries',
@@ -50,7 +50,7 @@ const GONKAGATE_CHAT_OPTION_DEFINITIONS = {
 		},
 	},
 	maxTokens: {
-		targets: ['requestBody', 'aiModel'],
+		surfaces: ['requestBody', 'aiModel'],
 		property: {
 			displayName: 'Maximum Number of Tokens',
 			name: 'maxTokens',
@@ -63,7 +63,7 @@ const GONKAGATE_CHAT_OPTION_DEFINITIONS = {
 		},
 	},
 	presencePenalty: {
-		targets: ['requestBody', 'aiModel'],
+		surfaces: ['requestBody', 'aiModel'],
 		property: {
 			displayName: 'Presence Penalty',
 			name: 'presencePenalty',
@@ -78,7 +78,7 @@ const GONKAGATE_CHAT_OPTION_DEFINITIONS = {
 		},
 	},
 	temperature: {
-		targets: ['requestBody', 'aiModel'],
+		surfaces: ['requestBody', 'aiModel'],
 		property: {
 			displayName: 'Sampling Temperature',
 			name: 'temperature',
@@ -93,7 +93,7 @@ const GONKAGATE_CHAT_OPTION_DEFINITIONS = {
 		},
 	},
 	timeout: {
-		targets: ['aiModel'],
+		surfaces: ['aiModel'],
 		property: {
 			displayName: 'Timeout',
 			name: 'timeout',
@@ -106,7 +106,7 @@ const GONKAGATE_CHAT_OPTION_DEFINITIONS = {
 		},
 	},
 	topP: {
-		targets: ['requestBody', 'aiModel'],
+		surfaces: ['requestBody', 'aiModel'],
 		property: {
 			displayName: 'Top P',
 			name: 'topP',
@@ -141,13 +141,13 @@ export function createGonkaGateChatModelOptionsProperty(): INodeProperties {
 
 export function resolveGonkaGateChatOptions(
 	rawOptions: IDataObject | undefined,
-	target: GonkaGateChatOptionTarget,
+	surface: GonkaGateChatOptionSurface,
 ): GonkaGateChatOptionValues {
 	const options = rawOptions ?? {};
 	const config: GonkaGateChatOptionValues = {};
 
 	for (const key of GONKAGATE_CHAT_OPTION_KEYS) {
-		if (!supportsChatOptionTarget(key, target)) {
+		if (!supportsChatOptionSurface(key, surface)) {
 			continue;
 		}
 
@@ -161,8 +161,8 @@ export function resolveGonkaGateChatOptions(
 	return config;
 }
 
-function getGonkaGateChatOptionProperties(target: GonkaGateChatOptionTarget): INodeProperties[] {
-	return GONKAGATE_CHAT_OPTION_KEYS.filter((key) => supportsChatOptionTarget(key, target)).map(
+function getGonkaGateChatOptionProperties(surface: GonkaGateChatOptionSurface): INodeProperties[] {
+	return GONKAGATE_CHAT_OPTION_KEYS.filter((key) => supportsChatOptionSurface(key, surface)).map(
 		(key) => GONKAGATE_CHAT_OPTION_DEFINITIONS[key].property,
 	);
 }
@@ -180,11 +180,11 @@ function getOptionalNumberOption(
 	return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-function supportsChatOptionTarget(
+function supportsChatOptionSurface(
 	key: GonkaGateChatOptionKey,
-	target: GonkaGateChatOptionTarget,
+	surface: GonkaGateChatOptionSurface,
 ): boolean {
-	return GONKAGATE_CHAT_OPTION_DEFINITIONS[key].targets.some(
-		(supportedTarget) => supportedTarget === target,
+	return GONKAGATE_CHAT_OPTION_DEFINITIONS[key].surfaces.some(
+		(supportedSurface) => supportedSurface === surface,
 	);
 }

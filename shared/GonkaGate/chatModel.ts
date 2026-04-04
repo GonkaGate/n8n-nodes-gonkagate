@@ -2,9 +2,7 @@ import { supplyModel } from 'ai-node-sdk';
 import type { OpenAiModel } from 'ai-node-sdk';
 import type { ISupplyDataFunctions, SupplyData } from 'n8n-workflow';
 
-import {
-	resolveGonkaGateChatModelParametersFromContext,
-} from './chatModelParameters';
+import { resolveGonkaGateChatModelParametersFromContext } from './chatModelParameters';
 import type { ResolvedGonkaGateChatParameters } from './chatParameters';
 import { resolveRequiredGonkaGateConnectionConfig } from './credentials';
 import { normalizeGonkaGateError } from './errors';
@@ -25,10 +23,11 @@ export function buildGonkaGateChatModelSupplyOptions(input: {
 		input.credentials,
 		input.itemIndex,
 	);
+	const modelConnection = createGonkaGateAiModelConnection(connection);
 
 	return {
 		type: 'openai',
-		...createGonkaGateAiModelConnection(connection),
+		...modelConnection,
 		model: input.chatParameters.model,
 		useResponsesApi: false,
 		streaming: input.chatParameters.stream,

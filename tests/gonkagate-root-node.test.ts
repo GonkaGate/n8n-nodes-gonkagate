@@ -7,7 +7,7 @@ import { GonkaGate } from '../nodes/GonkaGate/GonkaGate.node';
 import {
 	GONKAGATE_CHAT_COMPLETION_OPERATION,
 	GONKAGATE_LIST_MODELS_OPERATION,
-} from '../nodes/GonkaGate/operations';
+} from '../nodes/GonkaGate/operationTypes';
 import {
 	GONKAGATE_CHAT_COMPLETIONS_PATH,
 	GONKAGATE_MODELS_PATH,
@@ -30,7 +30,7 @@ test('GonkaGate.execute composes the shared request contract at the node boundar
 		json?: boolean;
 	}> = [];
 
-	const result = await executeRootNode({
+	const result = await executeGonkaGateRootNode({
 		itemParameters: [
 			createChatCompletionItemParameters({
 				[GONKAGATE_MODEL_PARAMETER_NAME]: ' test-model ',
@@ -73,7 +73,7 @@ test('GonkaGate.execute composes the shared request contract at the node boundar
 });
 
 test('GonkaGate.execute serializes recoverable upstream failures when continueOnFail is enabled', async () => {
-	const result = await executeRootNode({
+	const result = await executeGonkaGateRootNode({
 		inputItems: [{ json: { source: 'input' } }],
 		continueOnFail: true,
 		itemParameters: [createChatCompletionItemParameters()],
@@ -97,29 +97,11 @@ test('GonkaGate.execute serializes recoverable upstream failures when continueOn
 });
 
 test('GonkaGate.execute normalizes raw pre-request failures at the node boundary', async () => {
-	const result = await executeRootNode({
+	const result = await executeGonkaGateRootNode({
 		inputItems: [{ json: { source: 'input' } }],
 		continueOnFail: true,
 		itemParameters: [createChatCompletionItemParameters()],
-		getNodeParameter(parameterName, itemIndex, fallbackValue) {
-			if (parameterName === GONKAGATE_MESSAGES_PARAMETER_NAME) {
-				throw createBoundaryTimeoutError('req_boundary');
-			}
-
-			if (itemIndex !== 0) {
-				return fallbackValue;
-			}
-
-			if (parameterName === GONKAGATE_OPERATION_PARAMETER_NAME) {
-				return GONKAGATE_CHAT_COMPLETION_OPERATION;
-			}
-
-			if (parameterName === GONKAGATE_MODEL_PARAMETER_NAME) {
-				return 'test-model';
-			}
-
-			return fallbackValue;
-		},
+		getNodeParameter: createBoundaryFailureParameterResolver(),
 		authenticatedHttpRequest: async () => {
 			throw new Error('httpRequest should not be called');
 		},
@@ -140,7 +122,7 @@ test('GonkaGate.execute normalizes raw pre-request failures at the node boundary
 });
 
 test('GonkaGate.execute normalizes malformed /models payloads at the shared endpoint boundary', async () => {
-	const result = await executeRootNode({
+	const result = await executeGonkaGateRootNode({
 		itemParameters: [{ [GONKAGATE_OPERATION_PARAMETER_NAME]: GONKAGATE_LIST_MODELS_OPERATION }],
 		continueOnFail: true,
 		authenticatedHttpRequest: async () => ({
@@ -165,7 +147,7 @@ test('GonkaGate.execute normalizes malformed /models payloads at the shared endp
 test('GonkaGate.execute routes listModels through the operation registry', async () => {
 	const requests: Array<{ method?: string; url?: string }> = [];
 
-	const result = await executeRootNode({
+	const result = await executeGonkaGateRootNode({
 		itemParameters: [{ [GONKAGATE_OPERATION_PARAMETER_NAME]: GONKAGATE_LIST_MODELS_OPERATION }],
 		authenticatedHttpRequest: async (_credentialType, requestOptions) => {
 			requests.push({
@@ -194,7 +176,7 @@ test('GonkaGate.execute routes listModels through the operation registry', async
 
 test('GonkaGate.execute rejects unsupported persisted operation values explicitly', async () => {
 	await assert.rejects(
-		executeRootNode({
+		executeGonkaGateRootNode({
 			itemParameters: [{ [GONKAGATE_OPERATION_PARAMETER_NAME]: 'legacyOperation' }],
 			authenticatedHttpRequest: async () => {
 				throw new Error('httpRequest should not be called');
@@ -205,7 +187,29 @@ test('GonkaGate.execute rejects unsupported persisted operation values explicitl
 	);
 });
 
-async function executeRootNode(options: ExecuteContextOptions) {
+function createBoundaryFailureParameterResolver() {
+	return (parameterName: string, itemIndex: number, fallbackValue?: unknown) => {
+		if (parameterName === GONKAGATE_MESSAGES_PARAMETER_NAME) {
+			throw createBoundaryTimeoutError('req_boundary');
+		}
+
+		if (itemIndex !== 0) {
+			return fallbackValue;
+		}
+
+		if (parameterName === GONKAGATE_OPERATION_PARAMETER_NAME) {
+			return GONKAGATE_CHAT_COMPLETION_OPERATION;
+		}
+
+		if (parameterName === GONKAGATE_MODEL_PARAMETER_NAME) {
+			return 'test-model';
+		}
+
+		return fallbackValue;
+	};
+}
+
+async function executeGonkaGateRootNode(options: ExecuteContextOptions) {
 	const node = new GonkaGate();
 
 	return await node.execute.call(createExecuteContext(options));

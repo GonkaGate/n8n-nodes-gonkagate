@@ -15,17 +15,7 @@ export function createLoadOptionsContext(
 	return createStrictContext(
 		{
 			getNode() {
-				return {
-					...createTestNode(),
-					credentials: options.credentialsAttached
-						? {
-								[GONKAGATE_CREDENTIAL_NAME]: {
-									id: '1',
-									name: 'Test GonkaGate Credential',
-								},
-							}
-						: undefined,
-				};
+				return createLoadOptionsTestNode(options.credentialsAttached);
 			},
 			helpers: {
 				httpRequestWithAuthentication: options.authenticatedHttpRequest,
@@ -33,4 +23,20 @@ export function createLoadOptionsContext(
 		},
 		'ILoadOptionsFunctions',
 	) as unknown as ILoadOptionsFunctions;
+}
+
+function createLoadOptionsTestNode(credentialsAttached: boolean) {
+	return {
+		...createTestNode(),
+		credentials: credentialsAttached ? createGonkaGateCredentialReference() : undefined,
+	};
+}
+
+function createGonkaGateCredentialReference() {
+	return {
+		[GONKAGATE_CREDENTIAL_NAME]: {
+			id: '1',
+			name: 'Test GonkaGate Credential',
+		},
+	};
 }

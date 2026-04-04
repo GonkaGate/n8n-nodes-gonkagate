@@ -5,12 +5,12 @@ import test from 'node:test';
 
 import { GonkaGateApi } from '../credentials/GonkaGateApi.credentials';
 import { GonkaGate } from '../nodes/GonkaGate/GonkaGate.node';
+import { getGonkaGateOperationDefinitions } from '../nodes/GonkaGate/operationDefinitions';
 import {
 	GONKAGATE_CHAT_COMPLETION_OPERATION,
 	GONKAGATE_DEFAULT_OPERATION,
 	GONKAGATE_LIST_MODELS_OPERATION,
-	getGonkaGateOperationDefinitions,
-} from '../nodes/GonkaGate/operations';
+} from '../nodes/GonkaGate/operationTypes';
 import { LmChatGonkaGate } from '../nodes/LmChatGonkaGate/LmChatGonkaGate.node';
 import { GONKAGATE_MODEL_SEARCH_METHOD_NAME } from '../shared/GonkaGate/identifiers';
 import {
@@ -66,8 +66,12 @@ test('public metadata stays aligned across TS entrypoints and static node manife
 test('operation selector and model discovery wiring stay aligned with registered seams', () => {
 	const rootNode = new GonkaGate();
 	const chatModelNode = new LmChatGonkaGate();
-	const operationProperty = rootNode.description.properties.find((property) => property.name === 'operation');
-	const modelProperty = rootNode.description.properties.find((property) => property.name === 'model');
+	const operationProperty = rootNode.description.properties.find(
+		(property) => property.name === 'operation',
+	);
+	const modelProperty = rootNode.description.properties.find(
+		(property) => property.name === 'model',
+	);
 
 	assert.ok(operationProperty);
 	assert.equal(operationProperty?.default, GONKAGATE_DEFAULT_OPERATION);
@@ -75,14 +79,17 @@ test('operation selector and model discovery wiring stay aligned with registered
 		operationProperty?.options?.map((option) =>
 			'name' in option && 'value' in option ? option.value : undefined,
 		),
-		getGonkaGateOperationDefinitions().map((operation) => operation.type),
+		getGonkaGateOperationDefinitions().map((operation) => operation.operation),
 	);
 	assert.deepEqual(
-		getGonkaGateOperationDefinitions().map((operation) => operation.type),
+		getGonkaGateOperationDefinitions().map((operation) => operation.operation),
 		[GONKAGATE_CHAT_COMPLETION_OPERATION, GONKAGATE_LIST_MODELS_OPERATION],
 	);
 
-	assert.equal(rootNode.methods?.listSearch?.[GONKAGATE_MODEL_SEARCH_METHOD_NAME], chatModelNode.methods?.listSearch?.[GONKAGATE_MODEL_SEARCH_METHOD_NAME]);
+	assert.equal(
+		rootNode.methods?.listSearch?.[GONKAGATE_MODEL_SEARCH_METHOD_NAME],
+		chatModelNode.methods?.listSearch?.[GONKAGATE_MODEL_SEARCH_METHOD_NAME],
+	);
 	assert.equal(
 		modelProperty?.modes?.[0]?.typeOptions?.searchListMethod,
 		GONKAGATE_MODEL_SEARCH_METHOD_NAME,

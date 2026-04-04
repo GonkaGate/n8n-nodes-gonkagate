@@ -33,7 +33,14 @@ const gonkaGateCredentialProperties: INodeProperties[] = [
 		description: GONKAGATE_API_KEY_DESCRIPTION,
 	},
 	{
-		// Hidden so the shared credential helpers still receive the canonical base URL.
+		// Canonical internal field name for transport and chat-model helpers.
+		displayName: 'Base URL',
+		name: 'baseUrl',
+		type: 'hidden',
+		default: GONKAGATE_BASE_URL,
+	},
+	{
+		// Legacy alias preserved so previously stored credentials still resolve.
 		displayName: 'Base URL',
 		name: 'url',
 		type: 'hidden',

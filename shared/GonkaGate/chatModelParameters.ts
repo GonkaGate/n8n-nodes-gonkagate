@@ -1,21 +1,14 @@
-import type { IDataObject, INode, INodeProperties } from 'n8n-workflow';
+import type { INodeProperties } from 'n8n-workflow';
 
 import { createGonkaGateChatModelOptionsProperty } from './chatOptions';
 import {
+	resolveGonkaGateBaseChatParametersFromContext,
 	resolveGonkaGateChatParameters,
+	type GonkaGateNodeParameterContext,
 	type ResolvedGonkaGateChatParameters,
 } from './chatParameters';
 import { GONKAGATE_MODEL_SELECTOR_FEATURES } from './modelParameter';
-import {
-	GONKAGATE_MODEL_PARAMETER_NAME,
-	GONKAGATE_OPTIONS_PARAMETER_NAME,
-	GONKAGATE_STREAMING_PARAMETER_NAME,
-} from './parameters';
-
-type GonkaGateNodeParameterContext = {
-	getNode(): INode;
-	getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown): unknown;
-};
+import { GONKAGATE_STREAMING_PARAMETER_NAME } from './parameters';
 
 export const gonkaGateChatModelProperties: readonly INodeProperties[] = [
 	GONKAGATE_MODEL_SELECTOR_FEATURES.property,
@@ -38,15 +31,15 @@ export function resolveGonkaGateChatModelParametersFromContext(
 	context: GonkaGateNodeParameterContext,
 	itemIndex: number,
 ): ResolvedGonkaGateChatParameters {
-	return resolveGonkaGateChatParameters({
-		node: context.getNode(),
-		rawModel: context.getNodeParameter(GONKAGATE_MODEL_PARAMETER_NAME, itemIndex),
-		rawStreaming: context.getNodeParameter(
-			GONKAGATE_STREAMING_PARAMETER_NAME,
-			itemIndex,
-			true,
-		) as boolean,
-		rawOptions: context.getNodeParameter(GONKAGATE_OPTIONS_PARAMETER_NAME, itemIndex, {}) as IDataObject,
+	const baseChatParameters = resolveGonkaGateBaseChatParametersFromContext(context, itemIndex);
+	const rawStreaming = context.getNodeParameter(
+		GONKAGATE_STREAMING_PARAMETER_NAME,
 		itemIndex,
+		true,
+	) as boolean;
+
+	return resolveGonkaGateChatParameters({
+		...baseChatParameters,
+		rawStreaming,
 	});
 }

@@ -32,7 +32,7 @@ test('createGonkaGateChatModelSupplier forwards the GonkaGate chat-model contrac
 	const context = createSupplyDataContext({
 		credentialData: {
 			apiKey: 'test-key',
-			url: GONKAGATE_BASE_URL,
+			baseUrl: GONKAGATE_BASE_URL,
 		},
 		getCredentials(credentialName, itemIndex) {
 			requestedCredentialName = credentialName;
@@ -40,7 +40,7 @@ test('createGonkaGateChatModelSupplier forwards the GonkaGate chat-model contrac
 
 			return {
 				apiKey: 'test-key',
-				url: GONKAGATE_BASE_URL,
+				baseUrl: GONKAGATE_BASE_URL,
 			};
 		},
 		nodeParameters: createChatModelNodeParameters({
@@ -97,7 +97,7 @@ test('createGonkaGateChatModelSupplier normalizes supply-time GonkaGate failures
 			createSupplyDataContext({
 				credentialData: {
 					apiKey: 'test-key',
-					url: GONKAGATE_BASE_URL,
+					baseUrl: GONKAGATE_BASE_URL,
 				},
 				nodeParameters: createChatModelNodeParameters(),
 			}),
@@ -116,7 +116,7 @@ test('LmChatGonkaGate.supplyData returns a chat-model response for the GonkaGate
 		createSupplyDataContext({
 			credentialData: {
 				apiKey: 'test-key',
-				url: GONKAGATE_BASE_URL,
+				baseUrl: GONKAGATE_BASE_URL,
 			},
 			nodeParameters: createChatModelNodeParameters({
 				[GONKAGATE_OPTIONS_PARAMETER_NAME]: {

@@ -28,13 +28,14 @@ export function buildGonkaGateRequestOptions(
 	requestOptions: GonkaGateRequestOptions,
 ): GonkaGateRequestOptions {
 	const { body, headers, json = true, ...restRequestOptions } = requestOptions;
+	const normalizedHeaders = normalizeHeaders(headers);
 
 	return {
 		...restRequestOptions,
 		...(body !== undefined ? { body } : {}),
 		json,
 		headers: buildGonkaGateRequestHeaders({
-			headers: normalizeHeaders(headers),
+			headers: normalizedHeaders,
 			body,
 			json,
 		}),
@@ -45,14 +46,16 @@ export function applyGonkaGateConnectionToRequest(
 	connection: GonkaGateConnectionConfig,
 	requestOptions: IHttpRequestOptions,
 ): IHttpRequestOptions {
-	requestOptions.baseURL = requestOptions.baseURL ?? connection.baseUrl;
-	requestOptions.headers = {
+	const mergedHeaders = {
 		...buildGonkaGateDefaultHeaders({
 			...normalizeHeaders(connection.defaultHeaders),
 			...normalizeHeaders(requestOptions.headers),
 		}),
 		Authorization: `Bearer ${connection.apiKey}`,
 	};
+
+	requestOptions.baseURL = requestOptions.baseURL ?? connection.baseUrl;
+	requestOptions.headers = mergedHeaders;
 
 	return requestOptions;
 }

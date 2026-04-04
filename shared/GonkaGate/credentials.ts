@@ -6,7 +6,7 @@ import {
 	LEGACY_GONKAGATE_BASE_URL_PLACEHOLDER,
 } from './constants';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
-import { createListModelsRequestOptions } from './modelsApi';
+import { createGonkaGateListModelsRequestOptions } from './modelsApi';
 import {
 	applyGonkaGateConnectionToRequest,
 	buildGonkaGateRequestOptions,
@@ -16,6 +16,7 @@ import {
 
 export type GonkaGateCredentialData = {
 	apiKey?: string;
+	baseUrl?: string;
 	url?: string;
 };
 
@@ -42,9 +43,12 @@ export function resolveGonkaGateApiKey(rawApiKey: unknown): string {
 export function resolveGonkaGateConnectionConfig(
 	credentials: GonkaGateCredentialData,
 ): GonkaGateConnectionConfig {
+	const baseUrl = resolveGonkaGateBaseUrl(credentials.baseUrl ?? credentials.url);
+	const apiKey = resolveGonkaGateApiKey(credentials.apiKey);
+
 	return {
-		baseUrl: resolveGonkaGateBaseUrl(credentials.url),
-		apiKey: resolveGonkaGateApiKey(credentials.apiKey),
+		baseUrl,
+		apiKey,
 		defaultHeaders: buildGonkaGateDefaultHeaders(),
 	};
 }
@@ -92,5 +96,5 @@ export async function authenticateGonkaGateRequest(
 }
 
 export function createGonkaGateCredentialTestRequest(): IHttpRequestOptions {
-	return buildGonkaGateRequestOptions(createListModelsRequestOptions());
+	return buildGonkaGateRequestOptions(createGonkaGateListModelsRequestOptions());
 }

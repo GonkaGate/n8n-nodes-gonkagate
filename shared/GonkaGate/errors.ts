@@ -49,11 +49,13 @@ export function normalizeGonkaGateError(
 
 	if (errorCode && NETWORK_ERROR_MESSAGES[errorCode] !== undefined) {
 		return attachErrorContext(
-			new NodeOperationError(node, error as Error, {
+			createRecoverableNodeOperationError(
+				node,
+				error as Error,
 				itemIndex,
-				message: NETWORK_ERROR_MESSAGES[errorCode],
+				NETWORK_ERROR_MESSAGES[errorCode],
 				description,
-			}),
+			),
 			itemIndex,
 			{
 				requestId,
@@ -64,10 +66,7 @@ export function normalizeGonkaGateError(
 
 	if (looksLikeHttpError(error)) {
 		return attachErrorContext(
-			new NodeApiError(node, error as JsonObject, {
-				itemIndex,
-				description,
-			}),
+			createRecoverableNodeApiError(node, error as JsonObject, itemIndex, description),
 			itemIndex,
 			{
 				requestId,
@@ -77,11 +76,13 @@ export function normalizeGonkaGateError(
 	}
 
 	return attachErrorContext(
-		new NodeOperationError(node, error as Error, {
+		createFallbackNodeOperationError(
+			node,
+			error as Error,
 			itemIndex,
-			message: primaryMessage ?? `GonkaGate ${operationName} failed`,
+			primaryMessage ?? `GonkaGate ${operationName} failed`,
 			description,
-		}),
+		),
 		itemIndex,
 		{
 			requestId,
@@ -92,25 +93,7 @@ export function normalizeGonkaGateError(
 
 export function serializeGonkaGateError(error: unknown): IDataObject {
 	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
-		const output: IDataObject = {
-			error: error.message,
-		};
-
-		if (typeof error.description === 'string' && error.description.length > 0) {
-			output.description = error.description;
-		}
-
-		if (error instanceof NodeApiError && error.httpCode !== null) {
-			output.httpCode = error.httpCode;
-		}
-
-		const requestId = getErrorContext(error)?.requestId ?? extractRequestId(error);
-
-		if (typeof requestId === 'string' && requestId.length > 0) {
-			output.requestId = requestId;
-		}
-
-		return output;
+		return serializeKnownGonkaGateError(error);
 	}
 
 	const requestId = extractRequestId(error);
@@ -149,9 +132,7 @@ export function isRecoverableGonkaGateError(error: unknown): boolean {
 	);
 }
 
-function inferRecoverableNodeError(
-	error: NodeApiError | NodeOperationError,
-): boolean | undefined {
+function inferRecoverableNodeError(error: NodeApiError | NodeOperationError): boolean | undefined {
 	const contextualRecoverable = getErrorContext(error)?.recoverable;
 
 	if (contextualRecoverable !== undefined) {
@@ -167,6 +148,68 @@ function inferRecoverableNodeError(
 	return Object.values(NETWORK_ERROR_MESSAGES).some(
 		(networkErrorMessage) => networkErrorMessage === error.message,
 	);
+}
+
+function createRecoverableNodeOperationError(
+	node: INode,
+	error: Error,
+	itemIndex: number,
+	message: string,
+	description?: string,
+): NodeOperationError {
+	return new NodeOperationError(node, error, {
+		itemIndex,
+		message,
+		description,
+	});
+}
+
+function createRecoverableNodeApiError(
+	node: INode,
+	error: JsonObject,
+	itemIndex: number,
+	description?: string,
+): NodeApiError {
+	return new NodeApiError(node, error, {
+		itemIndex,
+		description,
+	});
+}
+
+function createFallbackNodeOperationError(
+	node: INode,
+	error: Error,
+	itemIndex: number,
+	message: string,
+	description?: string,
+): NodeOperationError {
+	return new NodeOperationError(node, error, {
+		itemIndex,
+		message,
+		description,
+	});
+}
+
+function serializeKnownGonkaGateError(error: NodeApiError | NodeOperationError): IDataObject {
+	const output: IDataObject = {
+		error: error.message,
+	};
+
+	if (typeof error.description === 'string' && error.description.length > 0) {
+		output.description = error.description;
+	}
+
+	if (error instanceof NodeApiError && error.httpCode !== null) {
+		output.httpCode = error.httpCode;
+	}
+
+	const requestId = getErrorContext(error)?.requestId ?? extractRequestId(error);
+
+	if (typeof requestId === 'string' && requestId.length > 0) {
+		output.requestId = requestId;
+	}
+
+	return output;
 }
 
 function attachErrorContext<T extends NodeApiError | NodeOperationError>(

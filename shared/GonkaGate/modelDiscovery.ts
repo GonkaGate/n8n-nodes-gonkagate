@@ -8,10 +8,7 @@ import { NodeApiError } from 'n8n-workflow';
 
 import { hasGonkaGateCredential } from './credentials';
 import { isRecoverableGonkaGateError } from './errors';
-import {
-	fetchGonkaGateModels as fetchGonkaGateModelsCatalog,
-	type GonkaGateModelRecord,
-} from './modelsApi';
+import { fetchGonkaGateModelCatalog, type GonkaGateModelRecord } from './modelsApi';
 
 const MAX_MODEL_RESULTS = 100;
 
@@ -24,7 +21,7 @@ export async function searchGonkaGateModels(
 	}
 
 	try {
-		const models = await fetchGonkaGateModels(this);
+		const models = await fetchGonkaGateModelCatalog(this);
 
 		return {
 			results: buildGonkaGateModelSearchResults(models, filter),
@@ -39,12 +36,6 @@ export async function searchGonkaGateModels(
 
 		throw error;
 	}
-}
-
-export async function fetchGonkaGateModels(
-	context: ILoadOptionsFunctions,
-): Promise<GonkaGateModelRecord[]> {
-	return await fetchGonkaGateModelsCatalog(context);
 }
 
 function shouldSuppressDiscoveryError(error: unknown): boolean {

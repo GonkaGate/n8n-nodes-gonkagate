@@ -26,24 +26,41 @@ export function createSupplyDataContext(options: SupplyDataContextOptions): ISup
 					return await options.getCredentials(credentialName, itemIndex);
 				}
 
-				if (credentialName !== GONKAGATE_CREDENTIAL_NAME) {
-					throw new Error(`Unexpected credential lookup: ${credentialName}`);
-				}
-
-				if (itemIndex !== (options.expectedCredentialItemIndex ?? 0)) {
-					throw new Error(`Unexpected credential item index: ${itemIndex}`);
-				}
-
-				return options.credentialData;
+				return resolveTestCredentials(options, credentialName, itemIndex);
 			},
 			getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
-				if (itemIndex !== (options.expectedNodeParameterItemIndex ?? 0)) {
-					throw new Error(`Unexpected parameter item index: ${itemIndex}`);
-				}
-
-				return options.nodeParameters[parameterName] ?? fallbackValue;
+				return resolveTestNodeParameter(options, parameterName, itemIndex, fallbackValue);
 			},
 		},
 		'ISupplyDataFunctions',
 	) as unknown as ISupplyDataFunctions;
+}
+
+function resolveTestCredentials(
+	options: SupplyDataContextOptions,
+	credentialName: string,
+	itemIndex: number,
+) {
+	if (credentialName !== GONKAGATE_CREDENTIAL_NAME) {
+		throw new Error(`Unexpected credential lookup: ${credentialName}`);
+	}
+
+	if (itemIndex !== (options.expectedCredentialItemIndex ?? 0)) {
+		throw new Error(`Unexpected credential item index: ${itemIndex}`);
+	}
+
+	return options.credentialData;
+}
+
+function resolveTestNodeParameter(
+	options: SupplyDataContextOptions,
+	parameterName: string,
+	itemIndex: number,
+	fallbackValue?: unknown,
+) {
+	if (itemIndex !== (options.expectedNodeParameterItemIndex ?? 0)) {
+		throw new Error(`Unexpected parameter item index: ${itemIndex}`);
+	}
+
+	return options.nodeParameters[parameterName] ?? fallbackValue;
 }

@@ -17,13 +17,14 @@ import { GONKAGATE_MODEL_SELECTOR_FEATURES } from '../../shared/GonkaGate/modelP
 import { GONKAGATE_OPERATION_PARAMETER_NAME } from '../../shared/GonkaGate/parameters';
 import {
 	createGonkaGateOperationProperty,
-	executeGonkaGateOperation,
-	GONKAGATE_DEFAULT_OPERATION,
-	getGonkaGateOperationMethods,
-	getGonkaGateOperationDisplayName,
 	getGonkaGateOperationProperties,
-	resolveGonkaGateOperation,
-} from './operations';
+} from './operationProperties';
+import { getGonkaGateOperationMethods } from './operationMethods';
+import {
+	executeGonkaGateOperationDefinition,
+	resolveGonkaGateOperationDefinition,
+} from './operationRuntime';
+import { GONKAGATE_DEFAULT_OPERATION } from './operationTypes';
 
 const GONKAGATE_UNKNOWN_OPERATION_NAME = 'Operation';
 
@@ -69,12 +70,12 @@ export class GonkaGate implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 
 		for (let itemIndex = 0; itemIndex < itemCount; itemIndex++) {
-			let operationName = GONKAGATE_UNKNOWN_OPERATION_NAME;
+			let operationDisplayName = GONKAGATE_UNKNOWN_OPERATION_NAME;
 			const defaultPairedItem = resolveDefaultPairedItem(inputItems, itemIndex);
 
 			try {
 				const executedOperation = await executeGonkaGateOperationForItem(this, itemIndex);
-				operationName = executedOperation.operationName;
+				operationDisplayName = executedOperation.operationDisplayName;
 
 				appendOperationOutput(returnData, executedOperation.outputData, defaultPairedItem);
 			} catch (error) {
@@ -82,7 +83,7 @@ export class GonkaGate implements INodeType {
 					this.getNode(),
 					error,
 					itemIndex,
-					operationName,
+					operationDisplayName,
 				);
 
 				if (this.continueOnFail()) {
@@ -104,17 +105,21 @@ export class GonkaGate implements INodeType {
 async function executeGonkaGateOperationForItem(
 	context: IExecuteFunctions,
 	itemIndex: number,
-): Promise<{ operationName: string; outputData: INodeExecutionData[] }> {
+): Promise<{ operationDisplayName: string; outputData: INodeExecutionData[] }> {
 	const rawOperation = context.getNodeParameter(
 		GONKAGATE_OPERATION_PARAMETER_NAME,
 		itemIndex,
 		GONKAGATE_DEFAULT_OPERATION,
 	);
-	const operation = resolveGonkaGateOperation(context.getNode(), rawOperation, itemIndex);
+	const operationDefinition = resolveGonkaGateOperationDefinition(
+		context.getNode(),
+		rawOperation,
+		itemIndex,
+	);
 
 	return {
-		operationName: getGonkaGateOperationDisplayName(operation),
-		outputData: await executeGonkaGateOperation(context, operation, itemIndex),
+		operationDisplayName: operationDefinition.displayName,
+		outputData: await executeGonkaGateOperationDefinition(context, operationDefinition, itemIndex),
 	};
 }
 

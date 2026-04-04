@@ -29,7 +29,7 @@ import {
 export type GonkaGateNodeMethods = NonNullable<INodeType['methods']>;
 
 export type GonkaGateOperationDefinition = {
-	type: GonkaGateOperation;
+	operation: GonkaGateOperation;
 	displayName: string;
 	action: string;
 	description: string;
@@ -40,7 +40,7 @@ export type GonkaGateOperationDefinition = {
 
 const gonkaGateOperationDefinitions = [
 	{
-		type: GONKAGATE_CHAT_COMPLETION_OPERATION,
+		operation: GONKAGATE_CHAT_COMPLETION_OPERATION,
 		displayName: GONKAGATE_CHAT_COMPLETION_OPERATION_NAME,
 		action: GONKAGATE_CHAT_COMPLETION_OPERATION_ACTION,
 		description: GONKAGATE_CHAT_COMPLETION_OPERATION_DESCRIPTION,
@@ -48,7 +48,7 @@ const gonkaGateOperationDefinitions = [
 		execute: executeChatCompletion,
 	},
 	{
-		type: GONKAGATE_LIST_MODELS_OPERATION,
+		operation: GONKAGATE_LIST_MODELS_OPERATION,
 		displayName: GONKAGATE_LIST_MODELS_OPERATION_NAME,
 		action: GONKAGATE_LIST_MODELS_OPERATION_ACTION,
 		description: GONKAGATE_LIST_MODELS_OPERATION_DESCRIPTION,
@@ -65,6 +65,6 @@ export function getGonkaGateOperationDefinition(
 	operation: GonkaGateOperation,
 ): GonkaGateOperationDefinition | undefined {
 	return gonkaGateOperationDefinitions.find(
-		(operationDefinition) => operationDefinition.type === operation,
+		(operationDefinition) => operationDefinition.operation === operation,
 	);
 }

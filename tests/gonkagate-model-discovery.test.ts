@@ -9,12 +9,12 @@ import {
 	searchGonkaGateModels,
 } from '../shared/GonkaGate/modelDiscovery';
 import { resolveGonkaGateModelId } from '../shared/GonkaGate/modelId';
-import { parseGonkaGateModelsResponse } from '../shared/GonkaGate/modelsApi';
+import { parseGonkaGateModelCatalog } from '../shared/GonkaGate/modelsApi';
 import { createLoadOptionsContext } from './helpers/createLoadOptionsContext';
 import { createModelResourceLocator, createTestNode } from './helpers/createTestNode';
 
-test('parseGonkaGateModelsResponse sorts active models before deprecated ones', () => {
-	const models = parseGonkaGateModelsResponse({
+test('parseGonkaGateModelCatalog sorts active models before deprecated ones', () => {
+	const models = parseGonkaGateModelCatalog({
 		data: [
 			{ id: 'legacy-model', deprecated: true, created: 10 },
 			{ id: 'new-model', created: 30 },
@@ -32,7 +32,7 @@ test('parseGonkaGateModelsResponse sorts active models before deprecated ones', 
 
 test('buildGonkaGateModelSearchResults keeps rich labels and filters by metadata', () => {
 	const results = buildGonkaGateModelSearchResults(
-		parseGonkaGateModelsResponse({
+		parseGonkaGateModelCatalog({
 			data: [
 				{
 					id: 'gonka/text-fast',
@@ -68,7 +68,7 @@ test('resolveGonkaGateModelId accepts manual strings and resource locator values
 });
 
 test('searchGonkaGateModels falls back to an empty list for recoverable upstream failures', async () => {
-	const results = await searchModels(async () => {
+	const results = await searchGonkaGateModelsWithCredentials(async () => {
 		throw {
 			response: {
 				status: 503,
@@ -84,7 +84,7 @@ test('searchGonkaGateModels falls back to an empty list for recoverable upstream
 
 test('searchGonkaGateModels surfaces credential failures instead of hiding them', async () => {
 	await assert.rejects(
-		searchModels(async () => {
+		searchGonkaGateModelsWithCredentials(async () => {
 			throw {
 				response: {
 					status: 401,
@@ -102,7 +102,7 @@ test('searchGonkaGateModels surfaces credential failures instead of hiding them'
 
 test('searchGonkaGateModels surfaces malformed models payloads instead of hiding them', async () => {
 	await assert.rejects(
-		searchModels(async () => ({
+		searchGonkaGateModelsWithCredentials(async () => ({
 			data: {
 				id: 'not-an-array',
 			},
@@ -113,7 +113,7 @@ test('searchGonkaGateModels surfaces malformed models payloads instead of hiding
 
 test('searchGonkaGateModels rethrows unexpected internal errors', async () => {
 	await assert.rejects(
-		searchModels(async () => {
+		searchGonkaGateModelsWithCredentials(async () => {
 			const response = {};
 			Object.defineProperty(response, 'data', {
 				get() {
@@ -129,7 +129,7 @@ test('searchGonkaGateModels rethrows unexpected internal errors', async () => {
 
 test('searchGonkaGateModels rethrows normalized internal node errors', async () => {
 	await assert.rejects(
-		searchModels(async () => {
+		searchGonkaGateModelsWithCredentials(async () => {
 			throw new NodeOperationError(createTestNode(), 'internal parse failure');
 		}),
 		/internal parse failure/,
@@ -137,7 +137,7 @@ test('searchGonkaGateModels rethrows normalized internal node errors', async () 
 });
 
 test('searchGonkaGateModels suppresses pre-normalized recoverable API errors', async () => {
-	const results = await searchModels(async () => {
+	const results = await searchGonkaGateModelsWithCredentials(async () => {
 		throw new NodeApiError(createTestNode(), {
 			status: 503,
 			data: {
@@ -149,7 +149,7 @@ test('searchGonkaGateModels suppresses pre-normalized recoverable API errors', a
 	assert.deepEqual(results, { results: [] });
 });
 
-async function searchModels(
+async function searchGonkaGateModelsWithCredentials(
 	authenticatedHttpRequest: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'],
 ) {
 	return await searchGonkaGateModels.call(

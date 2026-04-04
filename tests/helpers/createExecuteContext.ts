@@ -11,8 +11,12 @@ export type ExecuteContextOptions = {
 	getNodeParameter?: (parameterName: string, itemIndex: number, fallbackValue?: unknown) => unknown;
 };
 
+type NodeParameterResolver = ExecuteContextOptions['getNodeParameter'];
+
 export function createExecuteContext(options: ExecuteContextOptions): IExecuteFunctions {
 	const inputItems = options.inputItems ?? [];
+	const resolveNodeParameter =
+		options.getNodeParameter ?? createDefaultNodeParameterResolver(options.itemParameters);
 
 	return createStrictContext(
 		{
@@ -23,11 +27,7 @@ export function createExecuteContext(options: ExecuteContextOptions): IExecuteFu
 				return createTestNode();
 			},
 			getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
-				if (options.getNodeParameter !== undefined) {
-					return options.getNodeParameter(parameterName, itemIndex, fallbackValue);
-				}
-
-				return options.itemParameters[itemIndex]?.[parameterName] ?? fallbackValue;
+				return resolveNodeParameter(parameterName, itemIndex, fallbackValue);
 			},
 			continueOnFail() {
 				return options.continueOnFail ?? false;
@@ -38,4 +38,11 @@ export function createExecuteContext(options: ExecuteContextOptions): IExecuteFu
 		},
 		'IExecuteFunctions',
 	) as unknown as IExecuteFunctions;
+}
+
+function createDefaultNodeParameterResolver(
+	itemParameters: Array<Record<string, unknown>>,
+): NonNullable<NodeParameterResolver> {
+	return (parameterName: string, itemIndex: number, fallbackValue?: unknown) =>
+		itemParameters[itemIndex]?.[parameterName] ?? fallbackValue;
 }

@@ -98,12 +98,7 @@ async function createPackageTarball() {
 		cwd: repoRoot,
 	});
 
-	const result = JSON.parse(stdout);
-	const filename = result[0]?.filename;
-
-	if (typeof filename !== 'string' || filename.length === 0) {
-		throw new Error('Failed to determine npm pack output filename');
-	}
+	const filename = parsePackOutput(stdout);
 
 	return {
 		packDir,
@@ -123,10 +118,9 @@ async function validateInstalledPackage(sandboxDir, packageDir) {
 	return JSON.parse(stdout);
 }
 
-async function runVersionSmoke(n8nVersion, tarballPath, keepTemp) {
+async function runSmokeForVersion(n8nVersion, tarballPath, keepTemp) {
 	const sandboxDir = await mkdtemp(path.join(tmpdir(), `gonkagate-smoke-${n8nVersion}-`));
-	const userFolder = path.join(sandboxDir, '.n8n-user');
-	const nodesDir = path.join(userFolder, 'nodes');
+	const { nodesDir } = createSandboxPaths(sandboxDir);
 
 	try {
 		await installN8nVersion(sandboxDir, n8nVersion);
@@ -148,6 +142,26 @@ async function runVersionSmoke(n8nVersion, tarballPath, keepTemp) {
 			await rm(sandboxDir, { recursive: true, force: true });
 		}
 	}
+}
+
+function createSandboxPaths(sandboxDir) {
+	const userFolder = path.join(sandboxDir, '.n8n-user');
+
+	return {
+		userFolder,
+		nodesDir: path.join(userFolder, 'nodes'),
+	};
+}
+
+function parsePackOutput(stdout) {
+	const result = JSON.parse(stdout);
+	const filename = result[0]?.filename;
+
+	if (typeof filename !== 'string' || filename.length === 0) {
+		throw new Error('Failed to determine npm pack output filename');
+	}
+
+	return filename;
 }
 
 async function installN8nVersion(sandboxDir, n8nVersion) {
@@ -186,32 +200,36 @@ async function main() {
 	const { packDir, tarballPath } = await createPackageTarball();
 
 	try {
-		const results = [];
+		const results = await runSmokeForVersions(versions, tarballPath, keepTemp);
 
-		for (const version of versions) {
-			results.push(await runVersionSmoke(version, tarballPath, keepTemp));
-		}
-
-		process.stdout.write(
-			`${JSON.stringify(
-				{
-					ok: true,
-					packageName: '@gonkagate/n8n-nodes-gonkagate',
-					results: results.map((result) => ({
-						n8nVersion: result.n8nVersion,
-						nodeVersion: result.nodeVersion,
-						nodes: result.loadResult.nodes,
-						credentials: result.loadResult.credentials,
-						...(keepTemp ? { sandboxDir: result.sandboxDir } : {}),
-					})),
-				},
-				null,
-				2,
-			)}\n`,
-		);
+		process.stdout.write(`${JSON.stringify(buildSmokeReport(results, keepTemp), null, 2)}\n`);
 	} finally {
 		await rm(packDir, { recursive: true, force: true });
 	}
+}
+
+async function runSmokeForVersions(versions, tarballPath, keepTemp) {
+	const results = [];
+
+	for (const version of versions) {
+		results.push(await runSmokeForVersion(version, tarballPath, keepTemp));
+	}
+
+	return results;
+}
+
+function buildSmokeReport(results, keepTemp) {
+	return {
+		ok: true,
+		packageName: '@gonkagate/n8n-nodes-gonkagate',
+		results: results.map((result) => ({
+			n8nVersion: result.n8nVersion,
+			nodeVersion: result.nodeVersion,
+			nodes: result.loadResult.nodes,
+			credentials: result.loadResult.credentials,
+			...(keepTemp ? { sandboxDir: result.sandboxDir } : {}),
+		})),
+	};
 }
 
 await main();
