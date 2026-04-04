@@ -4,6 +4,7 @@ import { buildGonkaGateChatCompletionRequestBodyFromContext } from '../../../sha
 import { requestGonkaGateChatCompletionResponse } from '../../../shared/GonkaGate/chatCompletionsApi';
 import { createGonkaGateChatMessagesProperty } from '../../../shared/GonkaGate/chatMessages';
 import { GONKAGATE_MODEL_SELECTOR_PROPERTY } from '../../../shared/GonkaGate/modelParameter';
+import { executeGonkaGateJsonAction } from './executeJsonAction';
 
 export const GONKAGATE_CHAT_COMPLETION_OPERATION_ACTION = 'Create a chat completion';
 
@@ -20,9 +21,10 @@ export async function executeChatCompletion(
 	itemIndex: number,
 ): Promise<INodeExecutionData[]> {
 	const requestBody = buildGonkaGateChatCompletionRequestBodyFromContext(context, itemIndex);
-	const response = await requestGonkaGateChatCompletionResponse(context, requestBody, {
-		itemIndex,
-	});
 
-	return [{ json: response }];
+	return await executeGonkaGateJsonAction(async () =>
+		requestGonkaGateChatCompletionResponse(context, requestBody, {
+			itemIndex,
+		}),
+	);
 }

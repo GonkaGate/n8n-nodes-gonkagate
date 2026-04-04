@@ -11,6 +11,14 @@ import {
 
 export type GonkaGateNodeParameterContext = Pick<IExecuteFunctions, 'getNode' | 'getNodeParameter'>;
 
+export type GonkaGateChatParameterValues = {
+	node: INode;
+	rawModel: unknown;
+	rawStreaming: unknown;
+	rawOptions?: unknown;
+	itemIndex: number;
+};
+
 export type ResolvedGonkaGateChatParameters = {
 	model: string;
 	stream: boolean;
@@ -18,15 +26,15 @@ export type ResolvedGonkaGateChatParameters = {
 	aiModelOptions: GonkaGateChatOptionValues;
 };
 
-export function resolveGonkaGateChatParametersFromContext(
+export function readGonkaGateChatParameterValuesFromContext(
 	context: GonkaGateNodeParameterContext,
 	itemIndex: number,
 	input: {
 		rawStreaming?: unknown;
 		defaultStreaming?: boolean;
 	} = {},
-): ResolvedGonkaGateChatParameters {
-	return resolveGonkaGateChatParameters({
+): GonkaGateChatParameterValues {
+	return {
 		node: context.getNode(),
 		rawModel: context.getNodeParameter(GONKAGATE_MODEL_PARAMETER_NAME, itemIndex),
 		rawOptions: context.getNodeParameter(GONKAGATE_OPTIONS_PARAMETER_NAME, itemIndex, {}),
@@ -38,7 +46,20 @@ export function resolveGonkaGateChatParametersFromContext(
 				input.defaultStreaming ?? true,
 			),
 		itemIndex,
-	});
+	};
+}
+
+export function resolveGonkaGateChatParametersFromContext(
+	context: GonkaGateNodeParameterContext,
+	itemIndex: number,
+	input: {
+		rawStreaming?: unknown;
+		defaultStreaming?: boolean;
+	} = {},
+): ResolvedGonkaGateChatParameters {
+	return resolveGonkaGateChatParameters(
+		readGonkaGateChatParameterValuesFromContext(context, itemIndex, input),
+	);
 }
 
 export function resolveGonkaGateChatParameters(input: {

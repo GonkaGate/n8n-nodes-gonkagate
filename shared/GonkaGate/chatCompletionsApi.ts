@@ -3,10 +3,11 @@ import type { IDataObject } from 'n8n-workflow';
 import type { GonkaGateChatCompletionRequestBody } from './chatCompletionParameters';
 import { GONKAGATE_CHAT_COMPLETIONS_PATH } from './constants';
 import { GONKAGATE_CHAT_COMPLETION_OPERATION_NAME } from './operationNames';
-import { gonkaGateRequest, parseGonkaGateDataObjectResponse } from './request';
+import {
+	createGonkaGateEndpointRequester,
+	parseGonkaGateDataObjectResponse,
+} from './request';
 import type { GonkaGateRequestOptions } from './transport';
-
-type GonkaGateChatCompletionsRequestContext = Parameters<typeof gonkaGateRequest>[0];
 
 export function createGonkaGateChatCompletionRequestOptions(
 	body: GonkaGateChatCompletionRequestBody,
@@ -18,6 +19,14 @@ export function createGonkaGateChatCompletionRequestOptions(
 	};
 }
 
+const requestGonkaGateChatCompletionEndpoint = createGonkaGateEndpointRequester<IDataObject>({
+	operationName: GONKAGATE_CHAT_COMPLETION_OPERATION_NAME,
+	parseResponse: parseGonkaGateDataObjectResponse,
+});
+
+type GonkaGateChatCompletionsRequestContext =
+	Parameters<typeof requestGonkaGateChatCompletionEndpoint>[0];
+
 export async function requestGonkaGateChatCompletionResponse(
 	context: GonkaGateChatCompletionsRequestContext,
 	body: GonkaGateChatCompletionRequestBody,
@@ -25,13 +34,11 @@ export async function requestGonkaGateChatCompletionResponse(
 		itemIndex?: number;
 	} = {},
 ): Promise<IDataObject> {
-	return await gonkaGateRequest(
+	return await requestGonkaGateChatCompletionEndpoint(
 		context,
-		GONKAGATE_CHAT_COMPLETION_OPERATION_NAME,
 		createGonkaGateChatCompletionRequestOptions(body),
 		{
 			itemIndex: input.itemIndex,
-			parseResponse: parseGonkaGateDataObjectResponse,
 		},
 	);
 }

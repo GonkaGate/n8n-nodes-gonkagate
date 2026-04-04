@@ -2,8 +2,8 @@ import type { IDataObject, INode } from 'n8n-workflow';
 
 import { parseGonkaGateChatMessages, type GonkaGateChatMessage } from './chatMessages';
 import {
+	readGonkaGateChatParameterValuesFromContext,
 	resolveGonkaGateChatParameters,
-	resolveGonkaGateChatParametersFromContext,
 	type GonkaGateNodeParameterContext,
 	type ResolvedGonkaGateChatParameters,
 } from './chatParameters';
@@ -42,16 +42,14 @@ export function buildGonkaGateChatCompletionRequestBodyFromContext(
 	context: GonkaGateNodeParameterContext,
 	itemIndex: number,
 ): GonkaGateChatCompletionRequestBody {
-	const node = context.getNode();
-	const rawMessages = context.getNodeParameter(GONKAGATE_MESSAGES_PARAMETER_NAME, itemIndex);
-	const parameters = resolveGonkaGateChatParametersFromContext(context, itemIndex, {
+	const parameterValues = readGonkaGateChatParameterValuesFromContext(context, itemIndex, {
 		rawStreaming: false,
 	});
+	const rawMessages = context.getNodeParameter(GONKAGATE_MESSAGES_PARAMETER_NAME, itemIndex);
 
-	return toGonkaGateChatCompletionRequestBody(parameters, {
-		node,
+	return buildGonkaGateChatCompletionRequestBody({
+		...parameterValues,
 		rawMessages,
-		itemIndex,
 	});
 }
 

@@ -4,7 +4,7 @@ import { runWithNormalizedGonkaGateError } from './errors';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
 import { buildGonkaGateRequestOptions, type GonkaGateRequestOptions } from './transport';
 
-type GonkaGateRequestContext = {
+export type GonkaGateRequestContext = {
 	getNode(): INode;
 	helpers: {
 		httpRequestWithAuthentication(
@@ -42,6 +42,23 @@ export async function gonkaGateRequest<T extends IDataObject = IDataObject>(
 			return parseResponse(response);
 		},
 	});
+}
+
+export function createGonkaGateEndpointRequester<TResponse extends IDataObject>(input: {
+	operationName: string;
+	parseResponse: GonkaGateResponseParser<TResponse>;
+}) {
+	return async (
+		context: GonkaGateRequestContext,
+		requestOptions: GonkaGateRequestOptions,
+		options: {
+			itemIndex?: number;
+		} = {},
+	): Promise<TResponse> =>
+		await gonkaGateRequest(context, input.operationName, requestOptions, {
+			itemIndex: options.itemIndex,
+			parseResponse: input.parseResponse,
+		});
 }
 
 export function parseGonkaGateDataObjectResponse(response: unknown): IDataObject {

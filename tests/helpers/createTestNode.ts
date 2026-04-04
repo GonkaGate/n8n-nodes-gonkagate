@@ -1,14 +1,9 @@
-import type { INode, INodeParameterResourceLocator } from 'n8n-workflow';
+import type { INodeParameterResourceLocator } from 'n8n-workflow';
 
-export function createTestNode(): INode {
-	return {
-		id: '1',
-		name: 'Test Node',
-		type: 'test.node',
-		typeVersion: 1,
-		position: [0, 0],
-		parameters: {},
-	};
+import { createGonkaGateTestNode } from './gonkaGateTestContext';
+
+export function createTestNode() {
+	return createGonkaGateTestNode();
 }
 
 export function createModelResourceLocator(value: string): INodeParameterResourceLocator {

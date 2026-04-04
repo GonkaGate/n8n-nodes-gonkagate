@@ -6,7 +6,7 @@ import { createStrictContext } from './createStrictContext';
 import { createTestNode } from './createTestNode';
 import {
 	assertExpectedTestItemIndex,
-	resolveTestNodeParameter as resolveTestParameterValue,
+	createSingleItemTestNodeParameterResolver,
 } from './testContextAccess';
 
 export type SupplyDataContextOptions = {
@@ -29,6 +29,10 @@ type SupplyDataContextMock = {
 };
 
 export function createSupplyDataContext(options: SupplyDataContextOptions): ISupplyDataFunctions {
+	const resolveNodeParameter = createSingleItemTestNodeParameterResolver(
+		options.parameters,
+		options.parameterItemIndex ?? 0,
+	);
 	const context = {
 		getNode() {
 			return createTestNode();
@@ -41,7 +45,7 @@ export function createSupplyDataContext(options: SupplyDataContextOptions): ISup
 			return resolveTestCredentials(options, credentialName, itemIndex);
 		},
 		getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
-			return resolveSupplyDataTestNodeParameter(options, parameterName, itemIndex, fallbackValue);
+			return resolveNodeParameter(parameterName, itemIndex, fallbackValue);
 		},
 	} satisfies SupplyDataContextMock;
 
@@ -63,15 +67,4 @@ function resolveTestCredentials(
 	assertExpectedTestItemIndex(itemIndex, options.credentialItemIndex ?? 0, 'credential');
 
 	return options.credentials;
-}
-
-function resolveSupplyDataTestNodeParameter(
-	options: SupplyDataContextOptions,
-	parameterName: string,
-	itemIndex: number,
-	fallbackValue?: unknown,
-) {
-	assertExpectedTestItemIndex(itemIndex, options.parameterItemIndex ?? 0, 'parameter');
-
-	return resolveTestParameterValue(options.parameters, parameterName, fallbackValue);
 }

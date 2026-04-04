@@ -8,6 +8,11 @@ import {
 	buildGonkaGateModelSearchResults,
 	searchGonkaGateModels,
 } from '../shared/GonkaGate/modelDiscovery';
+import {
+	buildGonkaGateModelDisplayDescription,
+	buildGonkaGateModelDisplayName,
+	matchesGonkaGateModelFilter,
+} from '../shared/GonkaGate/modelCatalog';
 import { resolveGonkaGateModelId } from '../shared/GonkaGate/modelId';
 import { parseGonkaGateModelCatalog } from '../shared/GonkaGate/modelsApi';
 import { createLoadOptionsContext } from './helpers/createLoadOptionsContext';
@@ -57,6 +62,32 @@ test('buildGonkaGateModelSearchResults keeps rich labels and filters by metadata
 	assert.equal(results.length, 1);
 	assert.equal(results[0].name, 'gonka/reasoning-pro');
 	assert.match(results[0].description ?? '', /Reasoning-focused model/);
+});
+
+test('model catalog helpers own selector presentation and filtering metadata', () => {
+	const [model] = parseGonkaGateModelCatalog({
+		data: [
+			{
+				id: 'gonka/text-fast',
+				name: 'Fast Text',
+				description: 'General purpose text model',
+				context_length: 128000,
+				pricing: {
+					prompt: '$0.10',
+					completion: '$0.20',
+				},
+				provider: 'GonkaGate',
+			},
+		],
+	});
+
+	assert.equal(buildGonkaGateModelDisplayName(model), 'Fast Text (gonka/text-fast)');
+	assert.equal(
+		buildGonkaGateModelDisplayDescription(model),
+		'Context 128k | Prompt $0.10 / Completion $0.20 | General purpose text model',
+	);
+	assert.equal(matchesGonkaGateModelFilter(model, 'gonkagate'), true);
+	assert.equal(matchesGonkaGateModelFilter(model, 'image'), false);
 });
 
 test('resolveGonkaGateModelId accepts manual strings and resource locator values', () => {

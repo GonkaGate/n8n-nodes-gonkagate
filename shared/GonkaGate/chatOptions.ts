@@ -2,7 +2,7 @@ import type { INodeProperties } from 'n8n-workflow';
 
 import { GONKAGATE_OPTIONS_PARAMETER_NAME } from './parameters';
 
-type GonkaGateChatOptionSurface = 'requestBody' | 'aiModel';
+export type GonkaGateChatOptionSurface = 'requestBody' | 'aiModel';
 
 export type GonkaGateChatOptionKey =
 	| 'frequencyPenalty'
@@ -126,17 +126,37 @@ const GONKAGATE_CHAT_OPTION_KEYS = Object.keys(
 	GONKAGATE_CHAT_OPTION_DEFINITIONS,
 ) as GonkaGateChatOptionKey[];
 
-export function createGonkaGateChatModelOptionsProperty(): INodeProperties {
+export function createGonkaGateChatOptionsProperty(
+	surface: GonkaGateChatOptionSurface,
+	input: {
+		description: string;
+		displayOptions?: INodeProperties['displayOptions'];
+	},
+): INodeProperties {
 	return {
 		displayName: 'Options',
 		name: GONKAGATE_OPTIONS_PARAMETER_NAME,
 		type: 'collection',
 		placeholder: 'Add Option',
 		default: {},
+		description: input.description,
+		...(input.displayOptions !== undefined ? { displayOptions: input.displayOptions } : {}),
+		options: getGonkaGateChatOptionProperties(surface),
+	};
+}
+
+export function createGonkaGateChatCompletionOptionsProperty(): INodeProperties {
+	return createGonkaGateChatOptionsProperty('requestBody', {
+		description:
+			'Optional chat-completions request settings sent to GonkaGate while keeping Responses API mode off.',
+	});
+}
+
+export function createGonkaGateChatModelOptionsProperty(): INodeProperties {
+	return createGonkaGateChatOptionsProperty('aiModel', {
 		description:
 			'Optional chat-completions settings. This node keeps Responses API mode off and targets GonkaGate chat completions only.',
-		options: getGonkaGateChatOptionProperties('aiModel'),
-	};
+	});
 }
 
 export function resolveGonkaGateChatOptions(

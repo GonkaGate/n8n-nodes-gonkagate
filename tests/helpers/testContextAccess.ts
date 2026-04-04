@@ -1,10 +1,24 @@
-export type TestNodeParameters = Record<string, unknown>;
+import {
+	assertExpectedItemIndex,
+	createIndexedParameterReader,
+	createSingleParameterReader,
+	resolveGonkaGateTestParameter,
+	type GonkaGateTestNodeParameters,
+} from './gonkaGateTestContext';
+
+export type TestNodeParameters = GonkaGateTestNodeParameters;
 
 export function createIndexedTestNodeParameterResolver(
 	itemParameters: TestNodeParameters[],
 ) {
-	return (parameterName: string, itemIndex: number, fallbackValue?: unknown) =>
-		resolveTestNodeParameter(itemParameters[itemIndex], parameterName, fallbackValue);
+	return createIndexedParameterReader(itemParameters);
+}
+
+export function createSingleItemTestNodeParameterResolver(
+	parameters: TestNodeParameters,
+	expectedItemIndex = 0,
+) {
+	return createSingleParameterReader(parameters, expectedItemIndex);
 }
 
 export function resolveTestNodeParameter(
@@ -12,7 +26,7 @@ export function resolveTestNodeParameter(
 	parameterName: string,
 	fallbackValue?: unknown,
 ): unknown {
-	return parameters?.[parameterName] ?? fallbackValue;
+	return resolveGonkaGateTestParameter(parameters, parameterName, fallbackValue);
 }
 
 export function assertExpectedTestItemIndex(
@@ -20,7 +34,5 @@ export function assertExpectedTestItemIndex(
 	expectedItemIndex = 0,
 	itemType: 'parameter' | 'credential',
 ): void {
-	if (itemIndex !== expectedItemIndex) {
-		throw new Error(`Unexpected ${itemType} item index: ${itemIndex}`);
-	}
+	assertExpectedItemIndex(itemIndex, expectedItemIndex, itemType);
 }

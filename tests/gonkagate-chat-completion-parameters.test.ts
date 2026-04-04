@@ -2,6 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { buildGonkaGateChatCompletionRequestBody } from '../shared/GonkaGate/chatCompletionParameters';
+import {
+	createGonkaGateChatCompletionOptionsProperty,
+	createGonkaGateChatModelOptionsProperty,
+} from '../shared/GonkaGate/chatOptions';
 import { createTestNode } from './helpers/createTestNode';
 
 test('buildGonkaGateChatCompletionRequestBody normalizes chat payloads', () => {
@@ -40,5 +44,27 @@ test('buildGonkaGateChatCompletionRequestBody rejects malformed option collectio
 				itemIndex: 0,
 			}),
 		/Options must be an object/,
+	);
+});
+
+test('chat option properties stay scoped to their intended surfaces', () => {
+	const requestBodyOptions = createGonkaGateChatCompletionOptionsProperty();
+	const aiModelOptions = createGonkaGateChatModelOptionsProperty();
+
+	assert.deepEqual(
+		requestBodyOptions.options?.map((option) => option.name),
+		['frequencyPenalty', 'maxTokens', 'presencePenalty', 'temperature', 'topP'],
+	);
+	assert.deepEqual(
+		aiModelOptions.options?.map((option) => option.name),
+		[
+			'frequencyPenalty',
+			'maxRetries',
+			'maxTokens',
+			'presencePenalty',
+			'temperature',
+			'timeout',
+			'topP',
+		],
 	);
 });
