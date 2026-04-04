@@ -1,11 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import {
-	resolveGonkaGateBaseChatParametersFromContext,
-	resolveGonkaGateChatParameters,
-	type GonkaGateNodeParameterContext,
-	type ResolvedGonkaGateChatParameters,
-} from './chatParameters';
 import { GONKAGATE_STREAMING_PARAMETER_NAME } from './parameters';
 
 export function createGonkaGateStreamingProperty(): INodeProperties {
@@ -17,21 +11,4 @@ export function createGonkaGateStreamingProperty(): INodeProperties {
 		description:
 			'Whether n8n AI workflows should use GonkaGate SSE streaming on /v1/chat/completions when the surrounding workflow path supports visible live streaming',
 	};
-}
-
-export function resolveGonkaGateChatModelParametersFromContext(
-	context: GonkaGateNodeParameterContext,
-	itemIndex: number,
-): ResolvedGonkaGateChatParameters {
-	const baseChatParameters = resolveGonkaGateBaseChatParametersFromContext(context, itemIndex);
-	const rawStreaming = context.getNodeParameter(
-		GONKAGATE_STREAMING_PARAMETER_NAME,
-		itemIndex,
-		true,
-	);
-
-	return resolveGonkaGateChatParameters({
-		...baseChatParameters,
-		rawStreaming,
-	});
 }

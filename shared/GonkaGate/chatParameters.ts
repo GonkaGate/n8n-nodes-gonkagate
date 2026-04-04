@@ -3,7 +3,11 @@ import { NodeOperationError } from 'n8n-workflow';
 
 import { resolveGonkaGateChatOptions, type GonkaGateChatOptionValues } from './chatOptions';
 import { resolveGonkaGateModelId } from './modelId';
-import { GONKAGATE_MODEL_PARAMETER_NAME, GONKAGATE_OPTIONS_PARAMETER_NAME } from './parameters';
+import {
+	GONKAGATE_MODEL_PARAMETER_NAME,
+	GONKAGATE_OPTIONS_PARAMETER_NAME,
+	GONKAGATE_STREAMING_PARAMETER_NAME,
+} from './parameters';
 
 export type GonkaGateNodeParameterContext = Pick<IExecuteFunctions, 'getNode' | 'getNodeParameter'>;
 
@@ -14,23 +18,27 @@ export type ResolvedGonkaGateChatParameters = {
 	aiModelOptions: GonkaGateChatOptionValues;
 };
 
-export type GonkaGateBaseChatParameterInput = {
-	node: INode;
-	rawModel: unknown;
-	rawOptions?: unknown;
-	itemIndex: number;
-};
-
-export function resolveGonkaGateBaseChatParametersFromContext(
+export function resolveGonkaGateChatParametersFromContext(
 	context: GonkaGateNodeParameterContext,
 	itemIndex: number,
-): GonkaGateBaseChatParameterInput {
-	return {
+	input: {
+		rawStreaming?: unknown;
+		defaultStreaming?: boolean;
+	} = {},
+): ResolvedGonkaGateChatParameters {
+	return resolveGonkaGateChatParameters({
 		node: context.getNode(),
 		rawModel: context.getNodeParameter(GONKAGATE_MODEL_PARAMETER_NAME, itemIndex),
 		rawOptions: context.getNodeParameter(GONKAGATE_OPTIONS_PARAMETER_NAME, itemIndex, {}),
+		rawStreaming:
+			input.rawStreaming ??
+			context.getNodeParameter(
+				GONKAGATE_STREAMING_PARAMETER_NAME,
+				itemIndex,
+				input.defaultStreaming ?? true,
+			),
 		itemIndex,
-	};
+	});
 }
 
 export function resolveGonkaGateChatParameters(input: {

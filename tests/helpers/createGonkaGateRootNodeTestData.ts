@@ -9,6 +9,10 @@ import {
 	GONKAGATE_OPERATION_PARAMETER_NAME,
 } from '../../shared/GonkaGate/parameters';
 import { createExecuteContext, type ExecuteContextOptions } from './createExecuteContext';
+import {
+	createBoundaryTimeoutError,
+	createRecoverableTimeoutError,
+} from './createGonkaGateErrorFixtures';
 
 const CHAT_COMPLETION_MESSAGES = '[{"role":"user","content":"Hello from n8n"}]';
 
@@ -57,27 +61,4 @@ export function createBoundaryFailureParameterResolver() {
 	};
 }
 
-export function createRecoverableTimeoutError(requestId: string) {
-	return {
-		code: 'ETIMEDOUT',
-		message: 'socket timed out',
-		response: {
-			headers: {
-				'x-request-id': requestId,
-			},
-			data: {
-				message: 'socket timed out',
-			},
-		},
-	};
-}
-
-export function createBoundaryTimeoutError(requestId: string) {
-	return {
-		code: 'ETIMEDOUT',
-		message: 'socket timed out',
-		headers: {
-			'X-Request-Id': requestId,
-		},
-	};
-}
+export { createBoundaryTimeoutError, createRecoverableTimeoutError };

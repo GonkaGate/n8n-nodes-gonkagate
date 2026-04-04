@@ -2,6 +2,7 @@ import type { IExecuteFunctions, ILoadOptionsFunctions, INodeExecutionData } fro
 
 import { createStrictContext } from './createStrictContext';
 import { createTestNode } from './createTestNode';
+import { createIndexedTestNodeParameterResolver } from './testContextAccess';
 
 export type ExecuteContextOptions = {
 	itemParameters: Array<Record<string, unknown>>;
@@ -49,6 +50,5 @@ export function createExecuteContext(options: ExecuteContextOptions): IExecuteFu
 function createDefaultNodeParameterResolver(
 	itemParameters: Array<Record<string, unknown>>,
 ): NonNullable<NodeParameterResolver> {
-	return (parameterName: string, itemIndex: number, fallbackValue?: unknown) =>
-		itemParameters[itemIndex]?.[parameterName] ?? fallbackValue;
+	return createIndexedTestNodeParameterResolver(itemParameters);
 }

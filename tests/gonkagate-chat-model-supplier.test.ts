@@ -8,6 +8,7 @@ import { GONKAGATE_BASE_URL } from '../shared/GonkaGate/constants';
 import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
 import { GONKAGATE_STREAMING_PARAMETER_NAME } from '../shared/GonkaGate/parameters';
 import { createChatModelNodeParameters } from './helpers/createGonkaGateChatModelParameters';
+import { createRecoverableTimeoutError } from './helpers/createGonkaGateErrorFixtures';
 import { createSupplyDataContext } from './helpers/createSupplyDataContext';
 
 test('createGonkaGateChatModelSupplier forwards the GonkaGate chat-model contract to the SDK seam', async () => {
@@ -76,18 +77,7 @@ test('createGonkaGateChatModelSupplier forwards the GonkaGate chat-model contrac
 
 test('createGonkaGateChatModelSupplier normalizes supply-time GonkaGate failures', async () => {
 	const supplyGonkaGateChatModel = createGonkaGateChatModelSupplier(() => {
-		throw {
-			code: 'ETIMEDOUT',
-			message: 'socket timed out',
-			response: {
-				headers: {
-					'x-request-id': 'req_chat_model',
-				},
-				data: {
-					message: 'socket timed out',
-				},
-			},
-		};
+		throw createRecoverableTimeoutError('req_chat_model');
 	});
 
 	await assert.rejects(

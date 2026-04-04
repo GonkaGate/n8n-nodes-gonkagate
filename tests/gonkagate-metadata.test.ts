@@ -13,6 +13,7 @@ import {
 } from '../nodes/GonkaGate/operationTypes';
 import { LmChatGonkaGate } from '../nodes/LmChatGonkaGate/LmChatGonkaGate.node';
 import { GONKAGATE_MODEL_SEARCH_METHOD_NAME } from '../shared/GonkaGate/identifiers';
+import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
 import {
 	GONKAGATE_CHAT_MODEL_DESCRIPTION,
 	GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
@@ -44,6 +45,13 @@ test('public metadata stays aligned across TS entrypoints and static node manife
 	assert.equal(chatModelNode.description.description, GONKAGATE_CHAT_MODEL_DESCRIPTION);
 	assert.equal(credential.displayName, GONKAGATE_CREDENTIAL_DISPLAY_NAME);
 	assert.equal(credential.documentationUrl, GONKAGATE_CREDENTIAL_DOCUMENTATION_URL);
+	assert.deepEqual(rootNode.description.credentials, [
+		{
+			name: GONKAGATE_CREDENTIAL_NAME,
+			required: true,
+		},
+	]);
+	assert.deepEqual(chatModelNode.description.credentials, rootNode.description.credentials);
 
 	assert.equal(
 		rootManifest.resources?.credentialDocumentation?.[0]?.url,

@@ -4,6 +4,10 @@ import type { GonkaGateCredentialData } from '../../shared/GonkaGate/credentials
 import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
 import { createStrictContext } from './createStrictContext';
 import { createTestNode } from './createTestNode';
+import {
+	assertExpectedTestItemIndex,
+	resolveTestNodeParameter as resolveTestParameterValue,
+} from './testContextAccess';
 
 export type SupplyDataContextOptions = {
 	credentials: GonkaGateCredentialData;
@@ -37,7 +41,7 @@ export function createSupplyDataContext(options: SupplyDataContextOptions): ISup
 			return resolveTestCredentials(options, credentialName, itemIndex);
 		},
 		getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
-			return resolveTestNodeParameter(options, parameterName, itemIndex, fallbackValue);
+			return resolveSupplyDataTestNodeParameter(options, parameterName, itemIndex, fallbackValue);
 		},
 	} satisfies SupplyDataContextMock;
 
@@ -56,22 +60,18 @@ function resolveTestCredentials(
 		throw new Error(`Unexpected credential lookup: ${credentialName}`);
 	}
 
-	if (itemIndex !== (options.credentialItemIndex ?? 0)) {
-		throw new Error(`Unexpected credential item index: ${itemIndex}`);
-	}
+	assertExpectedTestItemIndex(itemIndex, options.credentialItemIndex ?? 0, 'credential');
 
 	return options.credentials;
 }
 
-function resolveTestNodeParameter(
+function resolveSupplyDataTestNodeParameter(
 	options: SupplyDataContextOptions,
 	parameterName: string,
 	itemIndex: number,
 	fallbackValue?: unknown,
 ) {
-	if (itemIndex !== (options.parameterItemIndex ?? 0)) {
-		throw new Error(`Unexpected parameter item index: ${itemIndex}`);
-	}
+	assertExpectedTestItemIndex(itemIndex, options.parameterItemIndex ?? 0, 'parameter');
 
-	return options.parameters[parameterName] ?? fallbackValue;
+	return resolveTestParameterValue(options.parameters, parameterName, fallbackValue);
 }
