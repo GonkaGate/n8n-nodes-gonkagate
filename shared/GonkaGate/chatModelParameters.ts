@@ -28,7 +28,7 @@ export function resolveGonkaGateChatModelParametersFromContext(
 		GONKAGATE_STREAMING_PARAMETER_NAME,
 		itemIndex,
 		true,
-	) as boolean;
+	);
 
 	return resolveGonkaGateChatParameters({
 		...baseChatParameters,

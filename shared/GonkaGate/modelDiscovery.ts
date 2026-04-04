@@ -1,9 +1,4 @@
-import type {
-	IDataObject,
-	ILoadOptionsFunctions,
-	INodeListSearchItems,
-	INodeListSearchResult,
-} from 'n8n-workflow';
+import type { ILoadOptionsFunctions, INodeListSearchItems, INodeListSearchResult } from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
 
 import { hasGonkaGateCredential } from './credentials';
@@ -121,7 +116,7 @@ function formatContextLength(model: GonkaGateModelRecord): string | undefined {
 	return `Context ${contextLength}`;
 }
 
-function formatPricing(pricing: IDataObject | undefined): string | undefined {
+function formatPricing(pricing: Record<string, unknown> | undefined): string | undefined {
 	if (pricing === undefined) {
 		return undefined;
 	}

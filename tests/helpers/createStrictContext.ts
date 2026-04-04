@@ -1,5 +1,8 @@
-export function createStrictContext<T extends object>(context: T, contextName: string): T {
-	return new Proxy(context, {
+export function createStrictContext<TExpected extends object, TContext extends object = TExpected>(
+	context: TContext,
+	contextName: string,
+): TExpected {
+	const proxy: object = new Proxy(context, {
 		get(target, property, receiver) {
 			if (typeof property === 'symbol' || property in target) {
 				return Reflect.get(target, property, receiver);
@@ -9,4 +12,6 @@ export function createStrictContext<T extends object>(context: T, contextName: s
 			throw new Error(`${contextName} mock does not implement ${String(property)}`);
 		},
 	});
+
+	return proxy as TExpected;
 }

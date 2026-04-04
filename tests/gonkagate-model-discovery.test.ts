@@ -67,6 +67,24 @@ test('resolveGonkaGateModelId accepts manual strings and resource locator values
 	);
 });
 
+test('resolveGonkaGateModelId rejects malformed resource locator payloads', () => {
+	assert.throws(
+		() =>
+			resolveGonkaGateModelId(
+				createTestNode(),
+				{
+					__rl: true,
+					mode: 'id',
+					value: {
+						id: 'invalid-model',
+					},
+				},
+				0,
+			),
+		/Model ID is required/,
+	);
+});
+
 test('searchGonkaGateModels falls back to an empty list for recoverable upstream failures', async () => {
 	const results = await searchGonkaGateModelsWithContext(async () => {
 		throw {

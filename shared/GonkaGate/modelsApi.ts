@@ -17,22 +17,24 @@ export function createGonkaGateListModelsRequestOptions(): GonkaGateRequestOptio
 }
 
 export function parseGonkaGateModelsApiResponse(response: unknown): GonkaGateModelsResponse {
-	const modelsResponse = parseGonkaGateDataObjectResponse<IDataObject & { data?: unknown }>(
-		response,
-	);
+	const modelsResponse = parseGonkaGateDataObjectResponse(response);
+	const data = modelsResponse.data;
 
-	if (!Array.isArray(modelsResponse.data)) {
+	if (!Array.isArray(data)) {
 		throw new Error('GonkaGate models response must contain a data array');
 	}
 
-	return modelsResponse as GonkaGateModelsResponse;
+	return {
+		...modelsResponse,
+		data,
+	};
 }
 
 export type GonkaGateModelRecord = IDataObject & {
 	id: string;
 	name?: string;
 	description?: string;
-	pricing?: IDataObject;
+	pricing?: Record<string, unknown>;
 	created?: number;
 };
 
@@ -99,7 +101,7 @@ function toModelRecord(model: Record<string, unknown>): GonkaGateModelRecord | n
 	}
 
 	if (isRecord(model.pricing)) {
-		record.pricing = model.pricing as IDataObject;
+		record.pricing = parseGonkaGateDataObjectResponse(model.pricing);
 	}
 
 	return record;

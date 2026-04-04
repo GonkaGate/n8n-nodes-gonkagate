@@ -6,6 +6,7 @@ import { NodeOperationError } from 'n8n-workflow';
 import { createGonkaGateChatModelSupplier } from '../shared/GonkaGate/chatModel';
 import { GONKAGATE_BASE_URL } from '../shared/GonkaGate/constants';
 import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
+import { GONKAGATE_STREAMING_PARAMETER_NAME } from '../shared/GonkaGate/parameters';
 import { createChatModelNodeParameters } from './helpers/createGonkaGateChatModelParameters';
 import { createSupplyDataContext } from './helpers/createSupplyDataContext';
 
@@ -107,4 +108,37 @@ test('createGonkaGateChatModelSupplier normalizes supply-time GonkaGate failures
 			error.message === 'The GonkaGate request timed out' &&
 			error.description === 'socket timed out\nRequest ID: req_chat_model',
 	);
+});
+
+test('createGonkaGateChatModelSupplier rejects corrupted non-boolean streaming values', async () => {
+	let supplierCalled = false;
+	const supplyGonkaGateChatModel = createGonkaGateChatModelSupplier(() => {
+		supplierCalled = true;
+
+		return {
+			response: { ok: true },
+		};
+	});
+
+	await assert.rejects(
+		supplyGonkaGateChatModel(
+			createSupplyDataContext({
+				credentials: {
+					apiKey: 'test-key',
+					baseUrl: GONKAGATE_BASE_URL,
+				},
+				credentialItemIndex: 0,
+				parameterItemIndex: 0,
+				parameters: {
+					...createChatModelNodeParameters(),
+					[GONKAGATE_STREAMING_PARAMETER_NAME]: 'false',
+				},
+			}),
+			0,
+		),
+		(error) =>
+			error instanceof NodeOperationError && error.message === 'Enable Streaming must be a boolean',
+	);
+
+	assert.equal(supplierCalled, false);
 });

@@ -7,11 +7,8 @@ type GonkaGateErrorContext = {
 	recoverable?: boolean;
 };
 
-const GONKAGATE_ERROR_CONTEXT_KEY = 'gonkaGateErrorContext';
-
-type GonkaGateNodeError = (NodeApiError | NodeOperationError) & {
-	[GONKAGATE_ERROR_CONTEXT_KEY]?: GonkaGateErrorContext;
-};
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
 
 const REQUEST_ID_HEADER_NAMES = [
 	'x-request-id',
@@ -19,6 +16,11 @@ const REQUEST_ID_HEADER_NAMES = [
 	'x-gonkagate-request-id',
 	'x-correlation-id',
 ];
+
+const gonkaGateErrorContextByError = new WeakMap<
+	NodeApiError | NodeOperationError,
+	GonkaGateErrorContext
+>();
 
 const NETWORK_ERROR_MESSAGES: Record<string, string> = {
 	ECONNREFUSED: 'Could not connect to GonkaGate',
@@ -51,7 +53,7 @@ export function normalizeGonkaGateError(
 		return attachErrorContext(
 			createRecoverableNodeOperationError(
 				node,
-				error as Error,
+				toErrorInstance(error, primaryMessage),
 				itemIndex,
 				NETWORK_ERROR_MESSAGES[errorCode],
 				description,
@@ -66,7 +68,7 @@ export function normalizeGonkaGateError(
 
 	if (looksLikeHttpError(error)) {
 		return attachErrorContext(
-			createRecoverableNodeApiError(node, error as JsonObject, itemIndex, description),
+			createRecoverableNodeApiError(node, toJsonObject(error), itemIndex, description),
 			itemIndex,
 			{
 				requestId,
@@ -78,7 +80,7 @@ export function normalizeGonkaGateError(
 	return attachErrorContext(
 		createFallbackNodeOperationError(
 			node,
-			error as Error,
+			toErrorInstance(error, primaryMessage ?? `GonkaGate ${operationName} failed`),
 			itemIndex,
 			primaryMessage ?? `GonkaGate ${operationName} failed`,
 			description,
@@ -113,7 +115,7 @@ export function toGonkaGateNodeOperationError(
 		return error;
 	}
 
-	return new NodeOperationError(node, error as Error, {
+	return new NodeOperationError(node, toErrorInstance(error), {
 		itemIndex,
 	});
 }
@@ -249,7 +251,7 @@ function attachErrorContext<T extends NodeApiError | NodeOperationError>(
 ): T {
 	const currentContext = getErrorContext(error) ?? {};
 
-	(error as GonkaGateNodeError)[GONKAGATE_ERROR_CONTEXT_KEY] = {
+	gonkaGateErrorContextByError.set(error, {
 		itemIndex: currentContext.itemIndex ?? itemIndex,
 		requestId:
 			currentContext.requestId ??
@@ -257,7 +259,7 @@ function attachErrorContext<T extends NodeApiError | NodeOperationError>(
 				? context.requestId
 				: undefined),
 		recoverable: currentContext.recoverable ?? context.recoverable,
-	};
+	});
 
 	return error;
 }
@@ -265,7 +267,7 @@ function attachErrorContext<T extends NodeApiError | NodeOperationError>(
 function getErrorContext(
 	error: NodeApiError | NodeOperationError,
 ): GonkaGateErrorContext | undefined {
-	return (error as GonkaGateNodeError)[GONKAGATE_ERROR_CONTEXT_KEY];
+	return gonkaGateErrorContextByError.get(error);
 }
 
 function buildErrorDescription(error: unknown, requestId?: string): string | undefined {
@@ -410,4 +412,89 @@ function extractString(value: unknown, key: string): string | undefined {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toErrorInstance(error: unknown, fallbackMessage = 'Unknown error'): Error {
+	if (error instanceof Error) {
+		return error;
+	}
+
+	return new Error(extractPrimaryMessage(error) ?? extractString(error, 'message') ?? fallbackMessage);
+}
+
+function toJsonObject(value: unknown): JsonObject {
+	if (value instanceof Error) {
+		return toJsonObjectFromError(value);
+	}
+
+	if (!isRecord(value)) {
+		return {};
+	}
+
+	return toJsonObjectFromRecord(value);
+}
+
+function toJsonObjectFromError(error: Error): JsonObject {
+	const errorRecord: Record<string, unknown> = {
+		name: error.name,
+		message: error.message,
+	};
+
+	assignIfDefined(errorRecord, 'code', extractString(error, 'code'));
+	assignIfDefined(errorRecord, 'description', extractString(error, 'description'));
+	assignIfDefined(errorRecord, 'httpCode', extractString(error, 'httpCode'));
+	assignIfDefined(errorRecord, 'status', extractString(error, 'status'));
+	assignIfDefined(errorRecord, 'statusCode', extractString(error, 'statusCode'));
+	assignIfDefined(errorRecord, 'headers', extractObject(error, 'headers'));
+	assignIfDefined(errorRecord, 'reason', extractObject(error, 'reason'));
+	assignIfDefined(errorRecord, 'response', extractObject(error, 'response'));
+
+	return toJsonObjectFromRecord(errorRecord);
+}
+
+function toJsonObjectFromRecord(value: Record<string, unknown>): JsonObject {
+	const jsonObject: JsonObject = {};
+
+	for (const [key, nestedValue] of Object.entries(value)) {
+		const jsonValue = toJsonValue(nestedValue);
+
+		if (jsonValue !== undefined) {
+			jsonObject[key] = jsonValue;
+		}
+	}
+
+	return jsonObject;
+}
+
+function toJsonValue(value: unknown): JsonValue | undefined {
+	if (
+		value === null ||
+		typeof value === 'string' ||
+		(typeof value === 'number' && Number.isFinite(value)) ||
+		typeof value === 'boolean'
+	) {
+		return value;
+	}
+
+	if (Array.isArray(value)) {
+		return value
+			.map((item) => toJsonValue(item))
+			.filter((item): item is JsonValue => item !== undefined);
+	}
+
+	if (isRecord(value)) {
+		return toJsonObject(value);
+	}
+
+	return undefined;
+}
+
+function assignIfDefined(
+	target: Record<string, unknown>,
+	key: string,
+	value: unknown,
+): void {
+	if (value !== undefined) {
+		target[key] = value;
+	}
 }

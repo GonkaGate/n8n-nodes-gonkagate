@@ -12,32 +12,38 @@ export type ExecuteContextOptions = {
 };
 
 type NodeParameterResolver = ExecuteContextOptions['getNodeParameter'];
+type ExecuteContextMock = {
+	continueOnFail(): boolean;
+	getInputData(): INodeExecutionData[];
+	getNode(): ReturnType<typeof createTestNode>;
+	getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown): unknown;
+	helpers: Pick<IExecuteFunctions['helpers'], 'httpRequestWithAuthentication'>;
+};
 
 export function createExecuteContext(options: ExecuteContextOptions): IExecuteFunctions {
 	const inputItems = options.inputItems ?? [];
 	const resolveNodeParameter =
 		options.getNodeParameter ?? createDefaultNodeParameterResolver(options.itemParameters);
 
-	return createStrictContext(
-		{
-			getInputData() {
-				return inputItems;
-			},
-			getNode() {
-				return createTestNode();
-			},
-			getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
-				return resolveNodeParameter(parameterName, itemIndex, fallbackValue);
-			},
-			continueOnFail() {
-				return options.continueOnFail ?? false;
-			},
-			helpers: {
-				httpRequestWithAuthentication: options.httpRequestWithAuthentication,
-			},
+	const context = {
+		getInputData() {
+			return inputItems;
 		},
-		'IExecuteFunctions',
-	) as unknown as IExecuteFunctions;
+		getNode() {
+			return createTestNode();
+		},
+		getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
+			return resolveNodeParameter(parameterName, itemIndex, fallbackValue);
+		},
+		continueOnFail() {
+			return options.continueOnFail ?? false;
+		},
+		helpers: {
+			httpRequestWithAuthentication: options.httpRequestWithAuthentication,
+		},
+	} satisfies ExecuteContextMock;
+
+	return createStrictContext<IExecuteFunctions, ExecuteContextMock>(context, 'IExecuteFunctions');
 }
 
 function createDefaultNodeParameterResolver(

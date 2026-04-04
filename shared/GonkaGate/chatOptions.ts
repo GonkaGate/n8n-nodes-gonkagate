@@ -1,4 +1,4 @@
-import type { IDataObject, INodeProperties } from 'n8n-workflow';
+import type { INodeProperties } from 'n8n-workflow';
 
 import { GONKAGATE_OPTIONS_PARAMETER_NAME } from './parameters';
 
@@ -140,7 +140,7 @@ export function createGonkaGateChatModelOptionsProperty(): INodeProperties {
 }
 
 export function resolveGonkaGateChatOptions(
-	rawOptions: IDataObject | undefined,
+	rawOptions: Record<string, unknown> | undefined,
 	surface: GonkaGateChatOptionSurface,
 ): GonkaGateChatOptionValues {
 	const options = rawOptions ?? {};
@@ -168,7 +168,7 @@ function getGonkaGateChatOptionProperties(surface: GonkaGateChatOptionSurface): 
 }
 
 function getOptionalNumberOption(
-	options: IDataObject,
+	options: Record<string, unknown>,
 	key: GonkaGateChatOptionKey,
 ): number | undefined {
 	if (!Object.prototype.hasOwnProperty.call(options, key)) {

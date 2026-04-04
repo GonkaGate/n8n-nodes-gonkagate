@@ -4,7 +4,10 @@ import type { ISupplyDataFunctions, SupplyData } from 'n8n-workflow';
 
 import { resolveGonkaGateChatModelParametersFromContext } from './chatModelParameters';
 import type { ResolvedGonkaGateChatParameters } from './chatParameters';
-import { resolveRequiredGonkaGateConnectionConfig } from './credentials';
+import {
+	resolveRequiredGonkaGateConnectionConfig,
+	type GonkaGateCredentialData,
+} from './credentials';
 import { runWithNormalizedGonkaGateError } from './errors';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
 import { GONKAGATE_CHAT_MODEL_DISPLAY_NAME } from './metadata';
@@ -14,7 +17,7 @@ type GonkaGateSupplyModel = typeof supplyModel;
 
 export function buildGonkaGateChatModelSupplyOptions(input: {
 	context: Pick<ISupplyDataFunctions, 'getNode'>;
-	credentials: Record<string, unknown>;
+	credentials: GonkaGateCredentialData;
 	chatParameters: ResolvedGonkaGateChatParameters;
 	itemIndex: number;
 }): OpenAiModel {

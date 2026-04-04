@@ -6,6 +6,10 @@ import { GONKAGATE_MESSAGES_PARAMETER_NAME } from './parameters';
 const CHAT_MESSAGES_EXAMPLE =
 	'Provide an array of OpenAI-compatible chat message objects, for example [{"role":"user","content":"Hello from n8n"}].';
 
+export type GonkaGateChatMessage = IDataObject & {
+	role: string;
+};
+
 export function createGonkaGateChatMessagesProperty(): INodeProperties {
 	return {
 		displayName: 'Messages (JSON)',
@@ -22,14 +26,17 @@ export function parseGonkaGateChatMessages(
 	node: INode,
 	rawMessages: unknown,
 	itemIndex: number,
-): IDataObject[] {
+): GonkaGateChatMessage[] {
 	let messages = rawMessages;
 
 	if (typeof messages === 'string') {
 		try {
 			messages = JSON.parse(messages);
 		} catch (error) {
-			throw new NodeOperationError(node, error as Error, {
+			const parseError =
+				error instanceof Error ? error : new Error('Messages must be valid JSON');
+
+			throw new NodeOperationError(node, parseError, {
 				itemIndex,
 				message: 'Messages must be valid JSON',
 				description: CHAT_MESSAGES_EXAMPLE,
@@ -44,21 +51,30 @@ export function parseGonkaGateChatMessages(
 		});
 	}
 
-	for (const message of messages) {
-		if (!isMessageObject(message)) {
-			throw new NodeOperationError(node, 'Each message must be a JSON object', {
-				itemIndex,
-			});
-		}
+	return messages.map((message) => toGonkaGateChatMessage(node, message, itemIndex));
+}
 
-		if (typeof message.role !== 'string' || message.role.trim().length === 0) {
-			throw new NodeOperationError(node, 'Each message must include a role', {
-				itemIndex,
-			});
-		}
+function toGonkaGateChatMessage(
+	node: INode,
+	value: unknown,
+	itemIndex: number,
+): GonkaGateChatMessage {
+	if (!isMessageObject(value)) {
+		throw new NodeOperationError(node, 'Each message must be a JSON object', {
+			itemIndex,
+		});
 	}
 
-	return messages;
+	if (typeof value.role !== 'string' || value.role.trim().length === 0) {
+		throw new NodeOperationError(node, 'Each message must include a role', {
+			itemIndex,
+		});
+	}
+
+	return {
+		...value,
+		role: value.role,
+	};
 }
 
 function isMessageObject(value: unknown): value is IDataObject {

@@ -8,21 +8,27 @@ export type LoadOptionsContextOptions = {
 	hasCredentials: boolean;
 	httpRequestWithAuthentication: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
 };
+type LoadOptionsContextMock = {
+	getNode(): ReturnType<typeof createLoadOptionsTestNode>;
+	helpers: Pick<ILoadOptionsFunctions['helpers'], 'httpRequestWithAuthentication'>;
+};
 
 export function createLoadOptionsContext(
 	options: LoadOptionsContextOptions,
 ): ILoadOptionsFunctions {
-	return createStrictContext(
-		{
-			getNode() {
-				return createLoadOptionsTestNode(options.hasCredentials);
-			},
-			helpers: {
-				httpRequestWithAuthentication: options.httpRequestWithAuthentication,
-			},
+	const context = {
+		getNode() {
+			return createLoadOptionsTestNode(options.hasCredentials);
 		},
+		helpers: {
+			httpRequestWithAuthentication: options.httpRequestWithAuthentication,
+		},
+	} satisfies LoadOptionsContextMock;
+
+	return createStrictContext<ILoadOptionsFunctions, LoadOptionsContextMock>(
+		context,
 		'ILoadOptionsFunctions',
-	) as unknown as ILoadOptionsFunctions;
+	);
 }
 
 function createLoadOptionsTestNode(hasCredentials: boolean) {

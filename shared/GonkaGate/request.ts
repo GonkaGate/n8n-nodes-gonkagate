@@ -44,14 +44,12 @@ export async function gonkaGateRequest<T extends IDataObject = IDataObject>(
 	});
 }
 
-export function parseGonkaGateDataObjectResponse<T extends IDataObject = IDataObject>(
-	response: unknown,
-): T {
+export function parseGonkaGateDataObjectResponse(response: unknown): IDataObject {
 	if (!isDataObject(response)) {
 		throw new Error('GonkaGate response must be a JSON object');
 	}
 
-	return response as T;
+	return response;
 }
 
 function isDataObject(value: unknown): value is IDataObject {

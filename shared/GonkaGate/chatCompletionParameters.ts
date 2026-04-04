@@ -1,6 +1,6 @@
 import type { IDataObject, INode } from 'n8n-workflow';
 
-import { parseGonkaGateChatMessages } from './chatMessages';
+import { parseGonkaGateChatMessages, type GonkaGateChatMessage } from './chatMessages';
 import {
 	resolveGonkaGateBaseChatParametersFromContext,
 	resolveGonkaGateChatParameters,
@@ -9,14 +9,20 @@ import {
 } from './chatParameters';
 import { GONKAGATE_MESSAGES_PARAMETER_NAME } from './parameters';
 
+export type GonkaGateChatCompletionRequestBody = IDataObject & {
+	model: string;
+	messages: GonkaGateChatMessage[];
+	stream: boolean;
+};
+
 export function buildGonkaGateChatCompletionRequestBody(input: {
 	node: INode;
 	rawModel: unknown;
 	rawMessages: unknown;
-	rawStreaming: boolean;
-	rawOptions?: IDataObject;
+	rawStreaming: unknown;
+	rawOptions?: unknown;
 	itemIndex: number;
-}): IDataObject {
+}): GonkaGateChatCompletionRequestBody {
 	const parameters = resolveGonkaGateChatParameters({
 		node: input.node,
 		rawModel: input.rawModel,
@@ -35,7 +41,7 @@ export function buildGonkaGateChatCompletionRequestBody(input: {
 export function buildGonkaGateChatCompletionRequestBodyFromContext(
 	context: GonkaGateNodeParameterContext,
 	itemIndex: number,
-): IDataObject {
+): GonkaGateChatCompletionRequestBody {
 	const baseChatParameters = resolveGonkaGateBaseChatParametersFromContext(context, itemIndex);
 	const rawMessages = context.getNodeParameter(GONKAGATE_MESSAGES_PARAMETER_NAME, itemIndex);
 	const parameters = resolveGonkaGateChatParameters({
@@ -57,7 +63,7 @@ function toGonkaGateChatCompletionRequestBody(
 		rawMessages: unknown;
 		itemIndex: number;
 	},
-): IDataObject {
+): GonkaGateChatCompletionRequestBody {
 	return {
 		model: parameters.model,
 		messages: parseGonkaGateChatMessages(input.node, input.rawMessages, input.itemIndex),

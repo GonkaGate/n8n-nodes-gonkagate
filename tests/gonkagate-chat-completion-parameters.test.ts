@@ -27,3 +27,18 @@ test('buildGonkaGateChatCompletionRequestBody normalizes chat payloads', () => {
 		temperature: 0.3,
 	});
 });
+
+test('buildGonkaGateChatCompletionRequestBody rejects malformed option collections', () => {
+	assert.throws(
+		() =>
+			buildGonkaGateChatCompletionRequestBody({
+				node: createTestNode(),
+				rawModel: 'manual-model',
+				rawMessages: [{ role: 'user', content: 'Hello from n8n' }],
+				rawStreaming: false,
+				rawOptions: 'not-an-options-object',
+				itemIndex: 0,
+			}),
+		/Options must be an object/,
+	);
+});
