@@ -16,6 +16,8 @@ import {
 	GONKAGATE_NODE_ICON,
 } from '../../shared/GonkaGate/metadata';
 
+const gonkaGateChatModelNodeProperties = [...gonkaGateChatModelProperties];
+
 export class LmChatGonkaGate implements INodeType {
 	methods = GONKAGATE_MODEL_SELECTOR_FEATURES.methods;
 
@@ -37,7 +39,7 @@ export class LmChatGonkaGate implements INodeType {
 				required: true,
 			},
 		],
-		properties: [...gonkaGateChatModelProperties],
+		properties: gonkaGateChatModelNodeProperties,
 	};
 
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {

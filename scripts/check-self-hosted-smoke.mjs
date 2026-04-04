@@ -11,9 +11,14 @@ const execFile = promisify(execFileCallback);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
+const validateInstalledPackageScriptPath = path.resolve(
+	repoRoot,
+	'scripts',
+	'validate-installed-package.cjs',
+);
 
 const EXPECTED_NODE_TYPE = 'gonkaGate';
-const EXPECTED_AI_NODE_TYPE = 'lmChatGonkaGate';
+const EXPECTED_CHAT_MODEL_NODE_TYPE = 'lmChatGonkaGate';
 const EXPECTED_CREDENTIAL_TYPE = 'gonkaGateApi';
 const DEFAULT_VERSIONS = ['2.13.4', '2.14.2'];
 
@@ -60,7 +65,7 @@ function ensureSupportedNodeVersion() {
 	}
 }
 
-async function run(command, args, options) {
+async function runCommand(command, args, options) {
 	try {
 		return await execFile(command, args, {
 			...options,
@@ -86,10 +91,10 @@ async function run(command, args, options) {
 	}
 }
 
-async function createTarball() {
+async function createPackageTarball() {
 	const packDir = await mkdtemp(path.join(tmpdir(), 'gonkagate-pack-'));
 
-	const { stdout } = await run('npm', ['pack', '--json', '--pack-destination', packDir], {
+	const { stdout } = await runCommand('npm', ['pack', '--json', '--pack-destination', packDir], {
 		cwd: repoRoot,
 	});
 
@@ -107,26 +112,13 @@ async function createTarball() {
 }
 
 async function validateInstalledPackage(sandboxDir, packageDir) {
-	const validationScript = `
-const { LazyPackageDirectoryLoader } = require('n8n-core');
-
-(async () => {
-  const loader = new LazyPackageDirectoryLoader(process.argv[1], [], []);
-  await loader.loadAll();
-
-  const result = {
-    packageName: loader.packageName,
-    nodes: Object.keys(loader.known.nodes),
-    credentials: Object.keys(loader.known.credentials),
-  };
-
-  process.stdout.write(JSON.stringify(result));
-})();
-`;
-
-	const { stdout } = await run(process.execPath, ['-e', validationScript, packageDir], {
-		cwd: sandboxDir,
-	});
+	const { stdout } = await runCommand(
+		process.execPath,
+		[validateInstalledPackageScriptPath, packageDir],
+		{
+			cwd: sandboxDir,
+		},
+	);
 
 	return JSON.parse(stdout);
 }
@@ -137,27 +129,13 @@ async function runVersionSmoke(n8nVersion, tarballPath, keepTemp) {
 	const nodesDir = path.join(userFolder, 'nodes');
 
 	try {
-		await run('npm', ['init', '-y'], { cwd: sandboxDir });
-		await run('npm', ['install', `n8n@${n8nVersion}`], { cwd: sandboxDir });
+		await installN8nVersion(sandboxDir, n8nVersion);
+		await installPackedNode(nodesDir, tarballPath);
 
-		await mkdir(nodesDir, { recursive: true });
-		await run('npm', ['init', '-y'], { cwd: nodesDir });
-		await run('npm', ['install', tarballPath], { cwd: nodesDir });
-
-		const packageDir = path.join(nodesDir, 'node_modules', '@gonkagate', 'n8n-nodes-gonkagate');
+		const packageDir = resolveInstalledPackageDirectory(nodesDir);
 
 		const loadResult = await validateInstalledPackage(sandboxDir, packageDir);
-		const passed =
-			loadResult.packageName === '@gonkagate/n8n-nodes-gonkagate' &&
-			loadResult.nodes.includes(EXPECTED_NODE_TYPE) &&
-			loadResult.nodes.includes(EXPECTED_AI_NODE_TYPE) &&
-			loadResult.credentials.includes(EXPECTED_CREDENTIAL_TYPE);
-
-		if (!passed) {
-			throw new Error(
-				`Unexpected loader result for n8n@${n8nVersion}: ${JSON.stringify(loadResult)}`,
-			);
-		}
+		assertInstalledPackageMatchesExpectation(n8nVersion, loadResult);
 
 		return {
 			n8nVersion,
@@ -172,11 +150,40 @@ async function runVersionSmoke(n8nVersion, tarballPath, keepTemp) {
 	}
 }
 
+async function installN8nVersion(sandboxDir, n8nVersion) {
+	await runCommand('npm', ['init', '-y'], { cwd: sandboxDir });
+	await runCommand('npm', ['install', `n8n@${n8nVersion}`], { cwd: sandboxDir });
+}
+
+async function installPackedNode(nodesDir, tarballPath) {
+	await mkdir(nodesDir, { recursive: true });
+	await runCommand('npm', ['init', '-y'], { cwd: nodesDir });
+	await runCommand('npm', ['install', tarballPath], { cwd: nodesDir });
+}
+
+function resolveInstalledPackageDirectory(nodesDir) {
+	return path.join(nodesDir, 'node_modules', '@gonkagate', 'n8n-nodes-gonkagate');
+}
+
+function assertInstalledPackageMatchesExpectation(n8nVersion, loadResult) {
+	const passed =
+		loadResult.packageName === '@gonkagate/n8n-nodes-gonkagate' &&
+		loadResult.nodes.includes(EXPECTED_NODE_TYPE) &&
+		loadResult.nodes.includes(EXPECTED_CHAT_MODEL_NODE_TYPE) &&
+		loadResult.credentials.includes(EXPECTED_CREDENTIAL_TYPE);
+
+	if (!passed) {
+		throw new Error(
+			`Unexpected loader result for n8n@${n8nVersion}: ${JSON.stringify(loadResult)}`,
+		);
+	}
+}
+
 async function main() {
 	ensureSupportedNodeVersion();
 
 	const { versions, keepTemp } = parseArgs(process.argv.slice(2));
-	const { packDir, tarballPath } = await createTarball();
+	const { packDir, tarballPath } = await createPackageTarball();
 
 	try {
 		const results = [];

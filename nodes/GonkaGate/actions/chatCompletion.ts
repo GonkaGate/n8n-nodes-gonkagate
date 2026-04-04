@@ -7,7 +7,6 @@ import {
 	gonkaGateRequest,
 	parseGonkaGateDataObjectResponse,
 } from '../../../shared/GonkaGate/request';
-import { createGonkaGateJsonOutput } from '../output';
 
 export const GONKAGATE_CHAT_COMPLETION_OPERATION_ACTION = 'Create a chat completion';
 
@@ -36,5 +35,5 @@ export async function executeChatCompletion(
 		},
 	);
 
-	return createGonkaGateJsonOutput(response);
+	return [{ json: response }];
 }

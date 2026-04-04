@@ -75,10 +75,10 @@ test('operation selector and model discovery wiring stay aligned with registered
 		operationProperty?.options?.map((option) =>
 			'name' in option && 'value' in option ? option.value : undefined,
 		),
-		getGonkaGateOperationDefinitions().map((operation) => operation.value),
+		getGonkaGateOperationDefinitions().map((operation) => operation.type),
 	);
 	assert.deepEqual(
-		getGonkaGateOperationDefinitions().map((operation) => operation.value),
+		getGonkaGateOperationDefinitions().map((operation) => operation.type),
 		[GONKAGATE_CHAT_COMPLETION_OPERATION, GONKAGATE_LIST_MODELS_OPERATION],
 	);
 

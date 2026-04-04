@@ -1,0 +1,8 @@
+export const GONKAGATE_CHAT_COMPLETION_OPERATION = 'chatCompletion';
+export const GONKAGATE_LIST_MODELS_OPERATION = 'listModels';
+
+export type GonkaGateOperation =
+	| typeof GONKAGATE_CHAT_COMPLETION_OPERATION
+	| typeof GONKAGATE_LIST_MODELS_OPERATION;
+
+export const GONKAGATE_DEFAULT_OPERATION: GonkaGateOperation = GONKAGATE_CHAT_COMPLETION_OPERATION;

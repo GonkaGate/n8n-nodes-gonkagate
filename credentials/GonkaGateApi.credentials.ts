@@ -20,6 +20,27 @@ import {
 	GONKAGATE_CREDENTIAL_ICON,
 } from '../shared/GonkaGate/metadata';
 
+const gonkaGateCredentialProperties: INodeProperties[] = [
+	{
+		displayName: 'API Key',
+		name: 'apiKey',
+		type: 'string',
+		typeOptions: {
+			password: true,
+		},
+		default: '',
+		required: true,
+		description: GONKAGATE_API_KEY_DESCRIPTION,
+	},
+	{
+		// Hidden so the shared credential helpers still receive the canonical base URL.
+		displayName: 'Base URL',
+		name: 'url',
+		type: 'hidden',
+		default: GONKAGATE_BASE_URL,
+	},
+];
+
 export class GonkaGateApi implements ICredentialType {
 	name = GONKAGATE_CREDENTIAL_NAME;
 
@@ -29,25 +50,7 @@ export class GonkaGateApi implements ICredentialType {
 
 	documentationUrl = GONKAGATE_CREDENTIAL_DOCUMENTATION_URL;
 
-	properties: INodeProperties[] = [
-		{
-			displayName: 'API Key',
-			name: 'apiKey',
-			type: 'string',
-			typeOptions: {
-				password: true,
-			},
-			default: '',
-			required: true,
-			description: GONKAGATE_API_KEY_DESCRIPTION,
-		},
-		{
-			displayName: 'Base URL',
-			name: 'url',
-			type: 'hidden',
-			default: GONKAGATE_BASE_URL,
-		},
-	];
+	properties: INodeProperties[] = gonkaGateCredentialProperties;
 
 	test: ICredentialTestRequest = {
 		request: createGonkaGateCredentialTestRequest(),

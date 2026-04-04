@@ -25,11 +25,20 @@ import {
 	resolveGonkaGateOperation,
 } from './operations';
 
+const GONKAGATE_UNKNOWN_OPERATION_NAME = 'Operation';
+
+const gonkaGateNodeMethods = {
+	...GONKAGATE_MODEL_SELECTOR_FEATURES.methods,
+	...(getGonkaGateOperationMethods() ?? {}),
+};
+
+const gonkaGateNodeProperties = [
+	createGonkaGateOperationProperty(),
+	...getGonkaGateOperationProperties(),
+];
+
 export class GonkaGate implements INodeType {
-	methods = {
-		...GONKAGATE_MODEL_SELECTOR_FEATURES.methods,
-		...(getGonkaGateOperationMethods() ?? {}),
-	};
+	methods = gonkaGateNodeMethods;
 
 	description: INodeTypeDescription = {
 		displayName: GONKAGATE_NODE_DISPLAY_NAME,
@@ -51,35 +60,23 @@ export class GonkaGate implements INodeType {
 				required: true,
 			},
 		],
-		properties: [createGonkaGateOperationProperty(), ...getGonkaGateOperationProperties()],
+		properties: gonkaGateNodeProperties,
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const inputItems = this.getInputData();
-		const itemCount = inputItems.length > 0 ? inputItems.length : 1;
+		const itemCount = resolveExecutionItemCount(inputItems);
 		const returnData: INodeExecutionData[] = [];
 
 		for (let itemIndex = 0; itemIndex < itemCount; itemIndex++) {
-			let operationName = 'Operation';
+			let operationName = GONKAGATE_UNKNOWN_OPERATION_NAME;
+			const defaultPairedItem = resolveDefaultPairedItem(inputItems, itemIndex);
 
-				try {
-					const rawOperation = this.getNodeParameter(
-						GONKAGATE_OPERATION_PARAMETER_NAME,
-						itemIndex,
-						GONKAGATE_DEFAULT_OPERATION,
-					);
-					const operation = resolveGonkaGateOperation(this.getNode(), rawOperation, itemIndex);
-					operationName = getGonkaGateOperationDisplayName(operation);
+			try {
+				const executedOperation = await executeGonkaGateOperationForItem(this, itemIndex);
+				operationName = executedOperation.operationName;
 
-					const operationData = await executeGonkaGateOperation(this, operation, itemIndex);
-
-				for (const data of operationData) {
-					returnData.push({
-						...data,
-						pairedItem:
-							data.pairedItem ?? (inputItems.length > 0 ? { item: itemIndex } : undefined),
-					});
-				}
+				appendOperationOutput(returnData, executedOperation.outputData, defaultPairedItem);
 			} catch (error) {
 				const normalizedError = normalizeGonkaGateError(
 					this.getNode(),
@@ -91,7 +88,7 @@ export class GonkaGate implements INodeType {
 				if (this.continueOnFail()) {
 					returnData.push({
 						json: serializeGonkaGateError(normalizedError),
-						pairedItem: inputItems.length > 0 ? { item: itemIndex } : undefined,
+						pairedItem: defaultPairedItem,
 					});
 					continue;
 				}
@@ -102,4 +99,46 @@ export class GonkaGate implements INodeType {
 
 		return [returnData];
 	}
+}
+
+async function executeGonkaGateOperationForItem(
+	context: IExecuteFunctions,
+	itemIndex: number,
+): Promise<{ operationName: string; outputData: INodeExecutionData[] }> {
+	const rawOperation = context.getNodeParameter(
+		GONKAGATE_OPERATION_PARAMETER_NAME,
+		itemIndex,
+		GONKAGATE_DEFAULT_OPERATION,
+	);
+	const operation = resolveGonkaGateOperation(context.getNode(), rawOperation, itemIndex);
+
+	return {
+		operationName: getGonkaGateOperationDisplayName(operation),
+		outputData: await executeGonkaGateOperation(context, operation, itemIndex),
+	};
+}
+
+function appendOperationOutput(
+	returnData: INodeExecutionData[],
+	outputData: INodeExecutionData[],
+	defaultPairedItem: INodeExecutionData['pairedItem'],
+): void {
+	for (const outputItem of outputData) {
+		returnData.push({
+			...outputItem,
+			pairedItem: outputItem.pairedItem ?? defaultPairedItem,
+		});
+	}
+}
+
+function resolveDefaultPairedItem(
+	inputItems: INodeExecutionData[],
+	itemIndex: number,
+): INodeExecutionData['pairedItem'] {
+	return inputItems.length > 0 ? { item: itemIndex } : undefined;
+}
+
+function resolveExecutionItemCount(inputItems: INodeExecutionData[]): number {
+	// Parameter-only n8n nodes still execute once when nothing is connected upstream.
+	return inputItems.length > 0 ? inputItems.length : 1;
 }
