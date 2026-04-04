@@ -7,12 +7,6 @@ type GonkaGateErrorContext = {
 	recoverable?: boolean;
 };
 
-type ErrorWithContext = {
-	context?: GonkaGateErrorContext;
-	httpCode?: string | null;
-	description?: string;
-};
-
 const REQUEST_ID_HEADER_NAMES = [
 	'x-request-id',
 	'request-id',
@@ -27,6 +21,11 @@ const NETWORK_ERROR_MESSAGES: Record<string, string> = {
 	ECONNRESET: 'The connection to GonkaGate was interrupted',
 	EHOSTUNREACH: 'The GonkaGate host was unreachable',
 };
+
+const gonkaGateErrorMetadata = new WeakMap<
+	NodeApiError | NodeOperationError,
+	GonkaGateErrorContext
+>();
 
 export function normalizeGonkaGateError(
 	node: INode,
@@ -103,7 +102,7 @@ export function serializeGonkaGateError(error: unknown): IDataObject {
 			output.httpCode = error.httpCode;
 		}
 
-		const requestId = (error as ErrorWithContext).context?.requestId;
+		const requestId = getErrorContext(error)?.requestId ?? extractRequestId(error);
 
 		if (typeof requestId === 'string' && requestId.length > 0) {
 			output.requestId = requestId;
@@ -137,7 +136,7 @@ export function serializeGonkaGateError(error: unknown): IDataObject {
 
 export function isRecoverableGonkaGateError(error: unknown): boolean {
 	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
-		return (error as ErrorWithContext).context?.recoverable === true;
+		return getErrorContext(error)?.recoverable === true;
 	}
 
 	const errorCode = extractString(error, 'code');
@@ -156,19 +155,25 @@ function attachErrorContext<T extends NodeApiError | NodeOperationError>(
 		recoverable?: boolean;
 	},
 ): T {
-	const contextualError = error as ErrorWithContext;
-	contextualError.context ??= {};
-	contextualError.context.itemIndex ??= itemIndex;
+	const currentContext = getErrorContext(error) ?? {};
 
-	if (context.requestId !== undefined && context.requestId.length > 0) {
-		contextualError.context.requestId ??= context.requestId;
-	}
-
-	if (context.recoverable !== undefined) {
-		contextualError.context.recoverable ??= context.recoverable;
-	}
+	gonkaGateErrorMetadata.set(error, {
+		itemIndex: currentContext.itemIndex ?? itemIndex,
+		requestId:
+			currentContext.requestId ??
+			(context.requestId !== undefined && context.requestId.length > 0
+				? context.requestId
+				: undefined),
+		recoverable: currentContext.recoverable ?? context.recoverable,
+	});
 
 	return error;
+}
+
+function getErrorContext(
+	error: NodeApiError | NodeOperationError,
+): GonkaGateErrorContext | undefined {
+	return gonkaGateErrorMetadata.get(error);
 }
 
 function buildErrorDescription(error: unknown, requestId?: string): string | undefined {
@@ -200,10 +205,12 @@ function extractPrimaryMessage(error: unknown): string | undefined {
 }
 
 function extractRequestId(error: unknown): string | undefined {
-	const contextualRequestId = extractString(extractObject(error, 'context'), 'requestId');
+	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
+		const contextualRequestId = getErrorContext(error)?.requestId;
 
-	if (contextualRequestId !== undefined) {
-		return contextualRequestId;
+		if (contextualRequestId !== undefined) {
+			return contextualRequestId;
+		}
 	}
 
 	const headers =

@@ -8,12 +8,13 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 
 import {
 	createGonkaGateChatModelOptionsProperty,
+	GONKAGATE_CREDENTIAL_NAME,
 	supplyGonkaGateChatModel,
-} from '../shared/GonkaGate/chatModel';
+} from '../shared/GonkaGate';
 import {
 	createGonkaGateModelSearchMethods,
 	createGonkaGateModelSelectorProperty,
-} from '../shared/GonkaGate/models';
+} from '../shared/GonkaGate';
 
 export class LmChatGonkaGate implements INodeType {
 	methods = createGonkaGateModelSearchMethods();
@@ -33,7 +34,7 @@ export class LmChatGonkaGate implements INodeType {
 		outputs: [NodeConnectionTypes.AiLanguageModel],
 		credentials: [
 			{
-				name: 'gonkaGateApi',
+				name: GONKAGATE_CREDENTIAL_NAME,
 				required: true,
 			},
 		],

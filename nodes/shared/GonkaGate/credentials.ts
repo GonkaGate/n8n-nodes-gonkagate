@@ -5,6 +5,7 @@ import {
 	GONKAGATE_BASE_URL_MIGRATION_MESSAGE,
 	LEGACY_GONKAGATE_BASE_URL_PLACEHOLDER,
 } from './constants';
+import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
 
 export type GonkaGateCredentialData = {
 	apiKey?: string;
@@ -68,6 +69,10 @@ export function resolveRequiredGonkaGateApiKey(
 			itemIndex,
 		});
 	}
+}
+
+export function hasGonkaGateCredential(node: Pick<INode, 'credentials'>): boolean {
+	return node.credentials?.[GONKAGATE_CREDENTIAL_NAME] !== undefined;
 }
 
 export function resolveRequiredGonkaGateConnectionConfig(

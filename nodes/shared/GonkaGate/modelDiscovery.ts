@@ -4,9 +4,11 @@ import type {
 	INodeListSearchItems,
 	INodeListSearchResult,
 } from 'n8n-workflow';
+import { NodeApiError } from 'n8n-workflow';
 
-import { GONKAGATE_MODELS_PATH } from './constants';
+import { hasGonkaGateCredential } from './credentials';
 import { isRecoverableGonkaGateError } from './errors';
+import { createListModelsRequestOptions, type GonkaGateModelsResponse } from './modelsApi';
 import { gonkaGateRequest } from './request';
 
 export type GonkaGateModelRecord = IDataObject & {
@@ -17,17 +19,13 @@ export type GonkaGateModelRecord = IDataObject & {
 	created?: number;
 };
 
-type GonkaGateModelsResponse = IDataObject & {
-	data?: unknown;
-};
-
 const MAX_MODEL_RESULTS = 100;
 
 export async function searchGonkaGateModels(
 	this: ILoadOptionsFunctions,
 	filter?: string,
 ): Promise<INodeListSearchResult> {
-	if (this.getNode().credentials?.gonkaGateApi === undefined) {
+	if (!hasGonkaGateCredential(this.getNode())) {
 		return { results: [] };
 	}
 
@@ -38,7 +36,7 @@ export async function searchGonkaGateModels(
 			results: buildGonkaGateModelSearchResults(models, filter),
 		};
 	} catch (error) {
-		if (isRecoverableGonkaGateError(error)) {
+		if (shouldSuppressDiscoveryError(error)) {
 			// Discovery is a convenience layer. Returning an empty list keeps the
 			// manual ID fallback usable when the live call fails, while internal
 			// validation and parsing regressions still surface during development.
@@ -52,12 +50,27 @@ export async function searchGonkaGateModels(
 export async function fetchGonkaGateModels(
 	context: ILoadOptionsFunctions,
 ): Promise<GonkaGateModelRecord[]> {
-	const response = await gonkaGateRequest<GonkaGateModelsResponse>(context, 'List Models', {
-		method: 'GET',
-		url: GONKAGATE_MODELS_PATH,
-	});
+	const response = await gonkaGateRequest<GonkaGateModelsResponse>(
+		context,
+		'List Models',
+		createListModelsRequestOptions(),
+	);
 
 	return parseGonkaGateModelsResponse(response);
+}
+
+function shouldSuppressDiscoveryError(error: unknown): boolean {
+	if (!isRecoverableGonkaGateError(error)) {
+		return false;
+	}
+
+	if (!(error instanceof NodeApiError)) {
+		return true;
+	}
+
+	const httpCode = Number(error.httpCode);
+
+	return Number.isFinite(httpCode) && (httpCode === 408 || httpCode === 429 || httpCode >= 500);
 }
 
 export function parseGonkaGateModelsResponse(

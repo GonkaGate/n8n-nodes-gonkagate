@@ -1,20 +1,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import type { ILoadOptionsFunctions, INode } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
 import {
 	buildGonkaGateChatModelOptions,
 	createGonkaGateChatModelOptionsProperty,
-} from '../nodes/shared/GonkaGate/chatModel';
-import { normalizeGonkaGateError, serializeGonkaGateError } from '../nodes/shared/GonkaGate/errors';
-import {
-	buildGonkaGateModelSearchResults,
+	normalizeGonkaGateError,
 	parseGonkaGateModelsResponse,
+	resolveGonkaGateBaseUrl,
+	resolveGonkaGateModelId,
 	searchGonkaGateModels,
-} from '../nodes/shared/GonkaGate/modelDiscovery';
-import { resolveGonkaGateModelId } from '../nodes/shared/GonkaGate/models';
-import { resolveGonkaGateBaseUrl } from '../nodes/shared/GonkaGate/credentials';
+	serializeGonkaGateError,
+	buildGonkaGateModelSearchResults,
+} from '../nodes/shared/GonkaGate';
+import {
+	createLoadOptionsContext,
+	createModelResourceLocator,
+	createNode,
+} from './helpers/gonkagateTestUtils';
 
 test('parseGonkaGateModelsResponse sorts active models before deprecated ones', () => {
 	const models = parseGonkaGateModelsResponse({
@@ -65,7 +68,7 @@ test('buildGonkaGateModelSearchResults keeps rich labels and filters by metadata
 test('resolveGonkaGateModelId accepts manual strings and resource locator values', () => {
 	assert.equal(resolveGonkaGateModelId(createNode(), ' direct-model ', 0), 'direct-model');
 	assert.equal(
-		resolveGonkaGateModelId(createNode(), { __rl: true, mode: 'id', value: 'picked-model' }, 0),
+		resolveGonkaGateModelId(createNode(), createModelResourceLocator('picked-model'), 0),
 		'picked-model',
 	);
 });
@@ -115,6 +118,30 @@ test('searchGonkaGateModels falls back to an empty list for recoverable upstream
 	);
 
 	assert.deepEqual(results, { results: [] });
+});
+
+test('searchGonkaGateModels surfaces credential or contract failures instead of hiding them', async () => {
+	await assert.rejects(
+		searchGonkaGateModels.call(
+			createLoadOptionsContext({
+				credentialsSelected: true,
+				httpRequest: async () => {
+					throw {
+						response: {
+							status: 401,
+							data: {
+								message: 'unauthorized',
+							},
+						},
+					};
+				},
+			}),
+			'',
+		),
+		(error) =>
+			error instanceof NodeApiError &&
+			/Authorization failed|check your credentials/.test(error.message),
+	);
 });
 
 test('searchGonkaGateModels rethrows unexpected internal errors', async () => {
@@ -179,37 +206,30 @@ test('serializeGonkaGateError keeps normalized request metadata for continueOnFa
 	});
 });
 
-function createNode(): INode {
-	return {
-		id: '1',
-		name: 'Test Node',
-		type: 'test.node',
-		typeVersion: 1,
-		position: [0, 0],
-		parameters: {},
-	};
-}
+test('normalizeGonkaGateError keeps recoverable metadata outside framework error objects', () => {
+	const error = normalizeGonkaGateError(
+		createNode(),
+		{
+			code: 'ETIMEDOUT',
+			message: 'socket timed out',
+			response: {
+				headers: {
+					'x-request-id': 'req_456',
+				},
+				data: {
+					message: 'socket timed out',
+				},
+			},
+		},
+		0,
+		'Chat Completion',
+	);
 
-function createLoadOptionsContext(input: {
-	credentialsSelected: boolean;
-	httpRequest: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
-}): ILoadOptionsFunctions {
-	return {
-		getNode() {
-			return {
-				...createNode(),
-				credentials: input.credentialsSelected
-					? {
-							gonkaGateApi: {
-								id: '1',
-								name: 'Test GonkaGate Credential',
-							},
-						}
-					: undefined,
-			};
-		},
-		helpers: {
-			httpRequestWithAuthentication: input.httpRequest,
-		},
-	} as unknown as ILoadOptionsFunctions;
-}
+	assert.equal(error.context.requestId, undefined);
+	assert.equal((error.context as { recoverable?: boolean }).recoverable, undefined);
+	assert.deepEqual(serializeGonkaGateError(error), {
+		error: 'The GonkaGate request timed out',
+		description: 'socket timed out\nRequest ID: req_456',
+		requestId: 'req_456',
+	});
+});

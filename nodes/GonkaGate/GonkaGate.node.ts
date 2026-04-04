@@ -7,7 +7,7 @@ import type {
 import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 import { serializeGonkaGateError } from '../shared/GonkaGate/errors';
-import { createGonkaGateModelSearchMethods } from '../shared/GonkaGate/models';
+import { createGonkaGateModelSearchMethods, GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate';
 import {
 	createGonkaGateOperationProperty,
 	executeGonkaGateOperation,
@@ -35,7 +35,7 @@ export class GonkaGate implements INodeType {
 		usableAsTool: true,
 		credentials: [
 			{
-				name: 'gonkaGateApi',
+				name: GONKAGATE_CREDENTIAL_NAME,
 				required: true,
 			},
 		],
@@ -55,12 +55,15 @@ export class GonkaGate implements INodeType {
 					GONKAGATE_DEFAULT_OPERATION,
 				) as GonkaGateOperation;
 
-				const response = await executeGonkaGateOperation(this, operation, itemIndex);
+				const operationData = await executeGonkaGateOperation(this, operation, itemIndex);
 
-				returnData.push({
-					json: response,
-					pairedItem: inputItems.length > 0 ? { item: itemIndex } : undefined,
-				});
+				for (const data of operationData) {
+					returnData.push({
+						...data,
+						pairedItem:
+							data.pairedItem ?? (inputItems.length > 0 ? { item: itemIndex } : undefined),
+					});
+				}
 			} catch (error) {
 				if (this.continueOnFail()) {
 					returnData.push({

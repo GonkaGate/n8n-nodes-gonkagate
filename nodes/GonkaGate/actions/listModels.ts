@@ -1,19 +1,19 @@
-import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 
-import { GONKAGATE_MODELS_PATH } from '../../shared/GonkaGate/constants';
+import { createListModelsRequestOptions } from '../../shared/GonkaGate/modelsApi';
 import { gonkaGateRequest } from '../../shared/GonkaGate/request';
+import { createGonkaGateJsonOutput } from '../operations';
 
 export async function executeListModels(
 	context: IExecuteFunctions,
 	itemIndex: number,
-): Promise<IDataObject> {
-	return await gonkaGateRequest(
+): Promise<INodeExecutionData[]> {
+	const response = await gonkaGateRequest(
 		context,
 		'List Models',
-		{
-			method: 'GET',
-			url: GONKAGATE_MODELS_PATH,
-		},
+		createListModelsRequestOptions(),
 		itemIndex,
 	);
+
+	return createGonkaGateJsonOutput(response);
 }

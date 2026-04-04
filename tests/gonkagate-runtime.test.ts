@@ -1,17 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import type {
-	IExecuteFunctions,
-	ILoadOptionsFunctions,
-	INode,
-	INodeExecutionData,
-	ISupplyDataFunctions,
-} from 'n8n-workflow';
 
 import { GonkaGateApi } from '../credentials/GonkaGateApi.credentials';
 import { GonkaGate } from '../nodes/GonkaGate/GonkaGate.node';
 import { LmChatGonkaGate } from '../nodes/LmChatGonkaGate/LmChatGonkaGate.node';
-import { buildGonkaGateChatModelSupplyOptions } from '../nodes/shared/GonkaGate/chatModel';
+import {
+	buildGonkaGateChatModelSupplyOptions,
+	GONKAGATE_BASE_URL,
+	GONKAGATE_CHAT_COMPLETIONS_PATH,
+	GONKAGATE_MODELS_PATH,
+} from '../nodes/shared/GonkaGate';
+import {
+	createExecuteContext,
+	createNode,
+	createSupplyContext,
+} from './helpers/gonkagateTestUtils';
 
 test('GonkaGate.execute routes chat completion requests through the shared operation seam', async () => {
 	const requests: Array<{ method?: string; url?: string; body?: unknown; headers?: unknown }> = [];
@@ -44,7 +47,7 @@ test('GonkaGate.execute routes chat completion requests through the shared opera
 
 	assert.equal(requests.length, 1);
 	assert.equal(requests[0].method, 'POST');
-	assert.equal(requests[0].url, '/chat/completions');
+	assert.equal(requests[0].url, GONKAGATE_CHAT_COMPLETIONS_PATH);
 	assert.deepEqual(requests[0].body, {
 		model: 'test-model',
 		messages: [{ role: 'user', content: 'Hello from n8n' }],
@@ -151,7 +154,7 @@ test('buildGonkaGateChatModelSupplyOptions reuses the shared credential resoluti
 
 	assert.deepEqual(options, {
 		type: 'openai',
-		baseUrl: 'https://api.gonkagate.com/v1',
+		baseUrl: GONKAGATE_BASE_URL,
 		apiKey: 'test-key',
 		defaultHeaders: {
 			Accept: 'application/json',
@@ -185,57 +188,9 @@ test('LmChatGonkaGate.supplyData keeps the AI-node wiring local and executable',
 	assert.ok(result.response);
 });
 
-function createNode(): INode {
-	return {
-		id: '1',
-		name: 'Test Node',
-		type: 'test.node',
-		typeVersion: 1,
-		position: [0, 0],
-		parameters: {},
-	};
-}
+test('GonkaGateApi test request reuses the normalized runtime request path', () => {
+	const credential = new GonkaGateApi();
 
-function createExecuteContext(input: {
-	parameters: Array<Record<string, unknown>>;
-	httpRequest: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
-	continueOnFail?: boolean;
-	inputData?: INodeExecutionData[];
-}): IExecuteFunctions {
-	const inputData = input.inputData ?? [];
-
-	return {
-		getInputData() {
-			return inputData;
-		},
-		getNode() {
-			return createNode();
-		},
-		getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
-			return input.parameters[itemIndex]?.[parameterName] ?? fallbackValue;
-		},
-		continueOnFail() {
-			return input.continueOnFail ?? false;
-		},
-		helpers: {
-			httpRequestWithAuthentication: input.httpRequest,
-		},
-	} as unknown as IExecuteFunctions;
-}
-
-function createSupplyContext(input: {
-	credentials: Record<string, unknown>;
-	parameters: Record<string, unknown>;
-}): ISupplyDataFunctions {
-	return {
-		getNode() {
-			return createNode();
-		},
-		async getCredentials() {
-			return input.credentials;
-		},
-		getNodeParameter(parameterName: string, _itemIndex: number, fallbackValue?: unknown) {
-			return input.parameters[parameterName] ?? fallbackValue;
-		},
-	} as unknown as ISupplyDataFunctions;
-}
+	assert.equal(credential.test.request.baseURL, undefined);
+	assert.equal(credential.test.request.url, GONKAGATE_MODELS_PATH);
+});

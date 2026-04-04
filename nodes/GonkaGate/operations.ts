@@ -2,6 +2,7 @@ import type {
 	IDataObject,
 	IDisplayOptions,
 	IExecuteFunctions,
+	INodeExecutionData,
 	INodeProperties,
 } from 'n8n-workflow';
 
@@ -13,7 +14,7 @@ type GonkaGateOperationDefinition = {
 	action: string;
 	description: string;
 	properties: readonly INodeProperties[];
-	execute: (context: IExecuteFunctions, itemIndex: number) => Promise<IDataObject>;
+	execute: (context: IExecuteFunctions, itemIndex: number) => Promise<INodeExecutionData[]>;
 };
 
 const GONKAGATE_OPERATION_DEFINITIONS = {
@@ -69,8 +70,12 @@ export async function executeGonkaGateOperation(
 	context: IExecuteFunctions,
 	operation: GonkaGateOperation,
 	itemIndex: number,
-): Promise<IDataObject> {
+): Promise<INodeExecutionData[]> {
 	return await GONKAGATE_OPERATION_DEFINITIONS[operation].execute(context, itemIndex);
+}
+
+export function createGonkaGateJsonOutput(json: IDataObject): INodeExecutionData[] {
+	return [{ json }];
 }
 
 function withOperationDisplayOptions(
