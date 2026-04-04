@@ -1,13 +1,15 @@
 import type {
+	IAllExecuteFunctions,
 	IDataObject,
 	IExecuteFunctions,
 	IHttpRequestOptions,
 	ILoadOptionsFunctions,
+	ISupplyDataFunctions,
 } from 'n8n-workflow';
 
-import { normalizeGonkaGateError } from '../utils/errors';
+import { normalizeGonkaGateError } from './errors';
 
-type GonkaGateRequestContext = IExecuteFunctions | ILoadOptionsFunctions;
+type GonkaGateRequestContext = IExecuteFunctions | ILoadOptionsFunctions | ISupplyDataFunctions;
 
 export async function gonkaGateRequest<T extends IDataObject = IDataObject>(
 	context: GonkaGateRequestContext,
@@ -17,7 +19,7 @@ export async function gonkaGateRequest<T extends IDataObject = IDataObject>(
 ): Promise<T> {
 	try {
 		return (await context.helpers.httpRequestWithAuthentication.call(
-			context as IExecuteFunctions,
+			context as IAllExecuteFunctions,
 			'gonkaGateApi',
 			{
 				json: true,

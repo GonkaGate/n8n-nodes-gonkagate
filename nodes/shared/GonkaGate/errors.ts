@@ -1,10 +1,15 @@
-import type { INode, JsonObject } from 'n8n-workflow';
+import type { IDataObject, INode, JsonObject } from 'n8n-workflow';
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
+type GonkaGateErrorContext = {
+	itemIndex?: number;
+	requestId?: string;
+};
+
 type ErrorWithContext = {
-	context?: {
-		itemIndex?: number;
-	};
+	context?: GonkaGateErrorContext;
+	httpCode?: string | null;
+	description?: string;
 };
 
 const REQUEST_ID_HEADER_NAMES = [
@@ -29,9 +34,7 @@ export function normalizeGonkaGateError(
 	operationName: string,
 ): NodeApiError | NodeOperationError {
 	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
-		const contextualError = error as ErrorWithContext;
-		contextualError.context ??= {};
-		contextualError.context.itemIndex ??= itemIndex;
+		attachErrorContext(error, itemIndex, extractRequestId(error));
 		return error;
 	}
 
@@ -41,25 +44,112 @@ export function normalizeGonkaGateError(
 	const errorCode = extractString(error, 'code');
 
 	if (errorCode && NETWORK_ERROR_MESSAGES[errorCode] !== undefined) {
-		return new NodeOperationError(node, error as Error, {
+		return attachErrorContext(
+			new NodeOperationError(node, error as Error, {
+				itemIndex,
+				message: NETWORK_ERROR_MESSAGES[errorCode],
+				description,
+			}),
 			itemIndex,
-			message: NETWORK_ERROR_MESSAGES[errorCode],
-			description,
-		});
+			requestId,
+		);
 	}
 
 	if (looksLikeHttpError(error)) {
-		return new NodeApiError(node, error as JsonObject, {
+		return attachErrorContext(
+			new NodeApiError(node, error as JsonObject, {
+				itemIndex,
+				description,
+			}),
 			itemIndex,
-			description,
-		});
+			requestId,
+		);
 	}
 
-	return new NodeOperationError(node, error as Error, {
+	return attachErrorContext(
+		new NodeOperationError(node, error as Error, {
+			itemIndex,
+			message: primaryMessage ?? `GonkaGate ${operationName} failed`,
+			description,
+		}),
 		itemIndex,
-		message: primaryMessage ?? `GonkaGate ${operationName} failed`,
-		description,
-	});
+		requestId,
+	);
+}
+
+export function serializeGonkaGateError(error: unknown): IDataObject {
+	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
+		const output: IDataObject = {
+			error: error.message,
+		};
+
+		if (typeof error.description === 'string' && error.description.length > 0) {
+			output.description = error.description;
+		}
+
+		if (error instanceof NodeApiError && error.httpCode !== null) {
+			output.httpCode = error.httpCode;
+		}
+
+		const requestId = (error as ErrorWithContext).context?.requestId;
+
+		if (typeof requestId === 'string' && requestId.length > 0) {
+			output.requestId = requestId;
+		}
+
+		return output;
+	}
+
+	const requestId = extractRequestId(error);
+	const description = buildErrorDescription(error, requestId);
+	const httpCode = extractHttpCode(error);
+	const primaryMessage = extractPrimaryMessage(error) ?? 'Unknown error';
+	const output: IDataObject = {
+		error: primaryMessage,
+	};
+
+	if (description !== undefined && description !== primaryMessage) {
+		output.description = description;
+	}
+
+	if (httpCode !== undefined) {
+		output.httpCode = httpCode;
+	}
+
+	if (requestId !== undefined) {
+		output.requestId = requestId;
+	}
+
+	return output;
+}
+
+export function isRecoverableGonkaGateError(error: unknown): boolean {
+	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
+		return true;
+	}
+
+	const errorCode = extractString(error, 'code');
+
+	return (
+		(errorCode !== undefined && NETWORK_ERROR_MESSAGES[errorCode] !== undefined) ||
+		looksLikeHttpError(error)
+	);
+}
+
+function attachErrorContext<T extends NodeApiError | NodeOperationError>(
+	error: T,
+	itemIndex: number,
+	requestId?: string,
+): T {
+	const contextualError = error as ErrorWithContext;
+	contextualError.context ??= {};
+	contextualError.context.itemIndex ??= itemIndex;
+
+	if (requestId !== undefined && requestId.length > 0) {
+		contextualError.context.requestId ??= requestId;
+	}
+
+	return error;
 }
 
 function buildErrorDescription(error: unknown, requestId?: string): string | undefined {
@@ -91,6 +181,12 @@ function extractPrimaryMessage(error: unknown): string | undefined {
 }
 
 function extractRequestId(error: unknown): string | undefined {
+	const contextualRequestId = extractString(extractObject(error, 'context'), 'requestId');
+
+	if (contextualRequestId !== undefined) {
+		return contextualRequestId;
+	}
+
 	const headers =
 		extractObject(extractObject(error, 'response'), 'headers') ?? extractObject(error, 'headers');
 
@@ -115,6 +211,19 @@ function extractRequestId(error: unknown): string | undefined {
 	}
 
 	return undefined;
+}
+
+function extractHttpCode(error: unknown): string | undefined {
+	if (error instanceof NodeApiError && error.httpCode !== null) {
+		return error.httpCode;
+	}
+
+	return (
+		extractString(error, 'httpCode') ??
+		extractString(error, 'statusCode') ??
+		extractString(error, 'status') ??
+		extractString(error, 'code')
+	);
 }
 
 function looksLikeHttpError(error: unknown): boolean {

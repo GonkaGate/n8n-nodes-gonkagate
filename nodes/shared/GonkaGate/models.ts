@@ -10,8 +10,9 @@ import type {
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
-import { GONKAGATE_MODELS_PATH } from '../constants';
-import { gonkaGateRequest } from '../transport/request';
+import { GONKAGATE_MODELS_PATH } from './constants';
+import { isRecoverableGonkaGateError } from './errors';
+import { gonkaGateRequest } from './request';
 
 type GonkaGateModelRecord = IDataObject & {
 	id: string;
@@ -26,6 +27,16 @@ type GonkaGateModelsResponse = IDataObject & {
 };
 
 const MAX_MODEL_RESULTS = 100;
+
+export function createGonkaGateModelSearchMethods() {
+	return {
+		listSearch: {
+			async searchModels(this: ILoadOptionsFunctions, filter?: string) {
+				return await searchGonkaGateModels.call(this, filter);
+			},
+		},
+	};
+}
 
 export function createGonkaGateModelSelectorProperty(
 	displayOptions?: IDisplayOptions,
@@ -94,9 +105,7 @@ export async function searchGonkaGateModels(
 	this: ILoadOptionsFunctions,
 	filter?: string,
 ): Promise<INodeListSearchResult> {
-	try {
-		await this.getCredentials('gonkaGateApi');
-	} catch {
+	if (this.getNode().credentials?.gonkaGateApi === undefined) {
 		return { results: [] };
 	}
 
@@ -106,10 +115,15 @@ export async function searchGonkaGateModels(
 		return {
 			results: buildGonkaGateModelSearchResults(models, filter),
 		};
-	} catch {
-		// Discovery is a convenience layer. Returning an empty list keeps the
-		// manual ID fallback usable even when the live call fails.
-		return { results: [] };
+	} catch (error) {
+		if (isRecoverableGonkaGateError(error)) {
+			// Discovery is a convenience layer. Returning an empty list keeps the
+			// manual ID fallback usable when the live call fails, while unexpected
+			// internal errors still surface during development.
+			return { results: [] };
+		}
+
+		throw error;
 	}
 }
 
@@ -136,6 +150,23 @@ export function parseGonkaGateModelsResponse(
 		.map((model) => toModelRecord(model))
 		.filter((model): model is GonkaGateModelRecord => model !== null)
 		.sort(compareModels);
+}
+
+export function buildGonkaGateModelSearchResults(
+	models: GonkaGateModelRecord[],
+	filter: string | undefined,
+): INodeListSearchItems[] {
+	const normalizedFilter = filter?.trim().toLowerCase() ?? '';
+	const filteredModels =
+		normalizedFilter.length === 0
+			? models
+			: models.filter((model) => matchesModelFilter(model, normalizedFilter));
+
+	return filteredModels.slice(0, MAX_MODEL_RESULTS).map((model) => ({
+		name: buildModelSearchName(model),
+		value: model.id,
+		description: buildModelSearchDescription(model),
+	}));
 }
 
 function toModelRecord(model: Record<string, unknown>): GonkaGateModelRecord | null {
@@ -167,23 +198,6 @@ function toModelRecord(model: Record<string, unknown>): GonkaGateModelRecord | n
 	}
 
 	return record;
-}
-
-export function buildGonkaGateModelSearchResults(
-	models: GonkaGateModelRecord[],
-	filter: string | undefined,
-): INodeListSearchItems[] {
-	const normalizedFilter = filter?.trim().toLowerCase() ?? '';
-	const filteredModels =
-		normalizedFilter.length === 0
-			? models
-			: models.filter((model) => matchesModelFilter(model, normalizedFilter));
-
-	return filteredModels.slice(0, MAX_MODEL_RESULTS).map((model) => ({
-		name: buildModelSearchName(model),
-		value: model.id,
-		description: buildModelSearchDescription(model),
-	}));
 }
 
 function matchesModelFilter(model: GonkaGateModelRecord, filter: string): boolean {

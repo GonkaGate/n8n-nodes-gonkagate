@@ -34,7 +34,7 @@
 		"lint:n8n": "n8n-node lint",
 		"build:n8n": "n8n-node build",
 		"release": "n8n-node release",
-		"test:unit": "npm run build && node --test tests/**/*.test.js",
+		"test:unit": "rm -rf .test-dist && tsc -p tsconfig.unit.json && node --test .test-dist/tests/**/*.test.js",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"ci": "npm run lint && npm run typecheck && npm run build && npm run test:unit",
 		"prepublishOnly": "npm run check:publish-context"

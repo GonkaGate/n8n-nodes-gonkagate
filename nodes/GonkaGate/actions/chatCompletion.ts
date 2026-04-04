@@ -1,9 +1,11 @@
 import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
 
-import { GONKAGATE_CHAT_COMPLETIONS_PATH } from '../constants';
+import {
+	GONKAGATE_CHAT_COMPLETIONS_PATH,
+	gonkaGateRequest,
+	resolveGonkaGateModelId,
+} from '../../shared/GonkaGate';
 import { parseChatMessages } from '../utils/messages';
-import { resolveGonkaGateModelId } from '../utils/models';
-import { gonkaGateRequest } from '../transport/request';
 
 export async function executeChatCompletion(
 	context: IExecuteFunctions,

@@ -1,26 +1,22 @@
 import type {
 	IExecuteFunctions,
-	ILoadOptionsFunctions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-import { executeChatCompletion } from './actions/chatCompletion';
-import { executeListModels } from './actions/listModels';
-import { createGonkaGateModelSelectorProperty, searchGonkaGateModels } from './utils/models';
-
-type GonkaGateOperation = 'chatCompletion' | 'listModels';
+import { createGonkaGateModelSearchMethods, serializeGonkaGateError } from '../shared/GonkaGate';
+import {
+	createGonkaGateOperationProperty,
+	executeGonkaGateOperation,
+	GONKAGATE_DEFAULT_OPERATION,
+	getGonkaGateOperationProperties,
+	type GonkaGateOperation,
+} from './operations';
 
 export class GonkaGate implements INodeType {
-	methods = {
-		listSearch: {
-			async searchModels(this: ILoadOptionsFunctions, filter?: string) {
-				return await searchGonkaGateModels.call(this, filter);
-			},
-		},
-	};
+	methods = createGonkaGateModelSearchMethods();
 
 	description: INodeTypeDescription = {
 		displayName: 'GonkaGate',
@@ -42,48 +38,7 @@ export class GonkaGate implements INodeType {
 				required: true,
 			},
 		],
-		properties: [
-			{
-				displayName: 'Operation',
-				name: 'operation',
-				type: 'options',
-				noDataExpression: true,
-				default: 'chatCompletion',
-				options: [
-					{
-						name: 'Chat Completion',
-						value: 'chatCompletion',
-						action: 'Create a chat completion',
-						description: 'Send a non-streaming chat completion request to GonkaGate',
-					},
-					{
-						name: 'List Models',
-						value: 'listModels',
-						action: 'List available models',
-						description: 'List the models currently exposed by GonkaGate',
-					},
-				],
-			},
-			createGonkaGateModelSelectorProperty({
-				show: {
-					operation: ['chatCompletion'],
-				},
-			}),
-			{
-				displayName: 'Messages (JSON)',
-				name: 'messages',
-				type: 'json',
-				default: '[\n  {\n    "role": "user",\n    "content": "Hello from n8n"\n  }\n]',
-				required: true,
-				description:
-					'OpenAI-compatible chat messages sent to POST /v1/chat/completions. GonkaGate-specific advanced extensions stay out of the MVP surface for now.',
-				displayOptions: {
-					show: {
-						operation: ['chatCompletion'],
-					},
-				},
-			},
-		],
+		properties: [createGonkaGateOperationProperty(), ...getGonkaGateOperationProperties()],
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -96,13 +51,10 @@ export class GonkaGate implements INodeType {
 				const operation = this.getNodeParameter(
 					'operation',
 					itemIndex,
-					'chatCompletion',
+					GONKAGATE_DEFAULT_OPERATION,
 				) as GonkaGateOperation;
 
-				const response =
-					operation === 'listModels'
-						? await executeListModels(this, itemIndex)
-						: await executeChatCompletion(this, itemIndex);
+				const response = await executeGonkaGateOperation(this, operation, itemIndex);
 
 				returnData.push({
 					json: response,
@@ -111,9 +63,7 @@ export class GonkaGate implements INodeType {
 			} catch (error) {
 				if (this.continueOnFail()) {
 					returnData.push({
-						json: {
-							error: error instanceof Error ? error.message : 'Unknown error',
-						},
+						json: serializeGonkaGateError(error),
 						pairedItem: inputItems.length > 0 ? { item: itemIndex } : undefined,
 					});
 					continue;
