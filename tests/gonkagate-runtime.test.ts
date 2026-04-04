@@ -4,19 +4,33 @@ import test from 'node:test';
 import { GonkaGateApi } from '../credentials/GonkaGateApi.credentials';
 import { GonkaGate } from '../nodes/GonkaGate/GonkaGate.node';
 import { LmChatGonkaGate } from '../nodes/LmChatGonkaGate/LmChatGonkaGate.node';
+import { buildGonkaGateChatModelSupplyOptions } from '../shared/GonkaGate/chatModel';
 import {
 	GONKAGATE_BASE_URL,
 	GONKAGATE_CHAT_COMPLETIONS_PATH,
 	GONKAGATE_MODELS_PATH,
 } from '../shared/GonkaGate/constants';
+import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
 import {
 	createExecuteContext,
+	createNode,
 	createSupplyContext,
 } from './helpers/gonkagateTestUtils';
 
-test('GonkaGate.execute routes chat completion requests through the shared operation seam', async () => {
-	const requests: Array<{ method?: string; url?: string; body?: unknown; headers?: unknown }> = [];
+test('GonkaGate.execute composes shared request building with credential auth', async () => {
+	const requests: Array<{
+		baseURL?: string;
+		method?: string;
+		url?: string;
+		body?: unknown;
+		headers?: unknown;
+	}> = [];
 	const node = new GonkaGate();
+	const credential = new GonkaGateApi();
+	const credentials = {
+		apiKey: ' test-key ',
+		url: ' https://api.gonkagate.com/v1 ',
+	};
 
 	const result = await node.execute.call(
 		createExecuteContext({
@@ -27,12 +41,17 @@ test('GonkaGate.execute routes chat completion requests through the shared opera
 					messages: '[{"role":"user","content":"Hello from n8n"}]',
 				},
 			],
-			httpRequest: async (_credentialType, requestOptions) => {
+			httpRequest: async (credentialType, requestOptions) => {
+				assert.equal(credentialType, GONKAGATE_CREDENTIAL_NAME);
+
+				const authenticatedRequest = await credential.authenticate(credentials, requestOptions);
+
 				requests.push({
-					method: requestOptions.method,
-					url: requestOptions.url,
-					body: requestOptions.body,
-					headers: requestOptions.headers,
+					baseURL: authenticatedRequest.baseURL,
+					method: authenticatedRequest.method,
+					url: authenticatedRequest.url,
+					body: authenticatedRequest.body,
+					headers: authenticatedRequest.headers,
 				});
 
 				return {
@@ -44,6 +63,7 @@ test('GonkaGate.execute routes chat completion requests through the shared opera
 	);
 
 	assert.equal(requests.length, 1);
+	assert.equal(requests[0].baseURL, GONKAGATE_BASE_URL);
 	assert.equal(requests[0].method, 'POST');
 	assert.equal(requests[0].url, GONKAGATE_CHAT_COMPLETIONS_PATH);
 	assert.deepEqual(requests[0].body, {
@@ -55,6 +75,7 @@ test('GonkaGate.execute routes chat completion requests through the shared opera
 		String((requests[0].headers as Record<string, unknown>).Accept),
 		/application\/json/,
 	);
+	assert.equal((requests[0].headers as Record<string, unknown>).Authorization, 'Bearer test-key');
 	assert.deepEqual(result, [
 		[
 			{
@@ -110,6 +131,64 @@ test('GonkaGate.execute serializes recoverable upstream failures when continueOn
 	]);
 });
 
+test('GonkaGate.execute normalizes raw pre-request failures at the node boundary', async () => {
+	const node = new GonkaGate();
+
+	const result = await node.execute.call(
+		createExecuteContext({
+			inputData: [{ json: { source: 'input' } }],
+			continueOnFail: true,
+			parameters: [
+				{
+					operation: 'chatCompletion',
+					model: 'test-model',
+				},
+			],
+			getNodeParameter(parameterName, itemIndex, fallbackValue) {
+				if (parameterName === 'messages') {
+					throw {
+						code: 'ETIMEDOUT',
+						message: 'socket timed out',
+						headers: {
+							'X-Request-Id': 'req_boundary',
+						},
+					};
+				}
+
+				if (itemIndex !== 0) {
+					return fallbackValue;
+				}
+
+				if (parameterName === 'operation') {
+					return 'chatCompletion';
+				}
+
+				if (parameterName === 'model') {
+					return 'test-model';
+				}
+
+				return fallbackValue;
+			},
+			httpRequest: async () => {
+				throw new Error('httpRequest should not be called');
+			},
+		}),
+	);
+
+	assert.deepEqual(result, [
+		[
+			{
+				json: {
+					error: 'The GonkaGate request timed out',
+					description: 'socket timed out\nRequest ID: req_boundary',
+					requestId: 'req_boundary',
+				},
+				pairedItem: { item: 0 },
+			},
+		],
+	]);
+});
+
 test('GonkaGateApi.authenticate applies the shared credential authentication policy', async () => {
 	const credential = new GonkaGateApi();
 	const requestOptions = await credential.authenticate(
@@ -133,7 +212,44 @@ test('GonkaGateApi.authenticate applies the shared credential authentication pol
 	});
 });
 
-test('LmChatGonkaGate.supplyData preserves the GonkaGate chat-model contract', async () => {
+test('buildGonkaGateChatModelSupplyOptions preserves the GonkaGate AI-model contract', () => {
+	const result = buildGonkaGateChatModelSupplyOptions({
+		context: {
+			getNode() {
+				return createNode();
+			},
+		},
+		credentials: {
+			apiKey: 'test-key',
+			url: 'https://api.gonkagate.com/v1',
+		},
+		model: 'test-model',
+		streaming: false,
+		options: {
+			maxRetries: 3,
+			maxTokens: 128,
+			timeout: 1500,
+		},
+		itemIndex: 0,
+	});
+
+	assert.deepEqual(result, {
+		type: 'openai',
+		baseUrl: GONKAGATE_BASE_URL,
+		apiKey: 'test-key',
+		defaultHeaders: {
+			Accept: 'application/json',
+		},
+		model: 'test-model',
+		useResponsesApi: false,
+		streaming: false,
+		maxRetries: 3,
+		maxTokens: 128,
+		timeout: 1500,
+	});
+});
+
+test('LmChatGonkaGate.supplyData returns an AI model response for the GonkaGate surface', async () => {
 	const node = new LmChatGonkaGate();
 	const result = await node.supplyData.call(
 		createSupplyContext({
@@ -153,28 +269,39 @@ test('LmChatGonkaGate.supplyData preserves the GonkaGate chat-model contract', a
 	);
 
 	assert.ok(result.response);
-	const response = result.response as {
-		fields?: {
-			model?: unknown;
-			apiKey?: unknown;
-			useResponsesApi?: unknown;
-			streaming?: unknown;
-			maxTokens?: unknown;
-			configuration?: {
-				baseURL?: unknown;
-				defaultHeaders?: unknown;
-			};
-		};
-	};
-	assert.equal(response.fields?.model, 'test-model');
-	assert.equal(response.fields?.apiKey, 'test-key');
-	assert.equal(response.fields?.useResponsesApi, false);
-	assert.equal(response.fields?.streaming, false);
-	assert.equal(response.fields?.maxTokens, 128);
-	assert.equal(response.fields?.configuration?.baseURL, GONKAGATE_BASE_URL);
-	assert.deepEqual(response.fields?.configuration?.defaultHeaders, {
-		Accept: 'application/json',
-	});
+});
+
+test('GonkaGate.execute routes listModels through the operation registry', async () => {
+	const requests: Array<{ method?: string; url?: string }> = [];
+	const node = new GonkaGate();
+
+	const result = await node.execute.call(
+		createExecuteContext({
+			parameters: [{ operation: 'listModels' }],
+			httpRequest: async (_credentialType, requestOptions) => {
+				requests.push({
+					method: requestOptions.method,
+					url: requestOptions.url,
+				});
+
+				return {
+					data: [{ id: 'gonka/text-fast' }],
+				};
+			},
+		}),
+	);
+
+	assert.deepEqual(requests, [{ method: 'GET', url: GONKAGATE_MODELS_PATH }]);
+	assert.deepEqual(result, [
+		[
+			{
+				json: {
+					data: [{ id: 'gonka/text-fast' }],
+				},
+				pairedItem: undefined,
+			},
+		],
+	]);
 });
 
 test('GonkaGateApi test request reuses the normalized runtime transport defaults', () => {

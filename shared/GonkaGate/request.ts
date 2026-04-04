@@ -1,10 +1,19 @@
-import type { IAllExecuteFunctions, IDataObject, IHttpRequestOptions } from 'n8n-workflow';
+import type { IDataObject, IHttpRequestOptions, INode } from 'n8n-workflow';
 
 import { buildGonkaGateDefaultHeaders } from './credentials';
 import { normalizeGonkaGateError } from './errors';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
 
-type GonkaGateRequestContext = Pick<IAllExecuteFunctions, 'getNode' | 'helpers'>;
+type GonkaGateRequestContext = {
+	getNode(): INode;
+	helpers: {
+		httpRequestWithAuthentication(
+			this: unknown,
+			credentialType: string,
+			requestOptions: GonkaGateRequestOptions,
+		): Promise<unknown>;
+	};
+};
 
 export type GonkaGateRequestOptions = IHttpRequestOptions & {
 	json?: boolean;
@@ -35,7 +44,7 @@ export async function gonkaGateRequest<T extends IDataObject = IDataObject>(
 ): Promise<T> {
 	try {
 		return (await context.helpers.httpRequestWithAuthentication.call(
-			context as IAllExecuteFunctions,
+			context,
 			GONKAGATE_CREDENTIAL_NAME,
 			buildGonkaGateRequestOptions(requestOptions),
 		)) as T;

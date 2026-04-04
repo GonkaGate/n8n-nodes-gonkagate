@@ -1,18 +1,20 @@
 import type {
 	IExecuteFunctions,
+	INode,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-import { serializeGonkaGateError } from '../../shared/GonkaGate/errors';
+import { normalizeGonkaGateError, serializeGonkaGateError } from '../../shared/GonkaGate/errors';
 import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
 import { createGonkaGateModelSearchMethods } from '../../shared/GonkaGate/modelParameter';
 import {
 	createGonkaGateOperationProperty,
 	executeGonkaGateOperation,
 	GONKAGATE_DEFAULT_OPERATION,
+	getGonkaGateOperationDisplayName,
 	getGonkaGateOperationProperties,
 	type GonkaGateOperation,
 } from './operations';
@@ -49,12 +51,15 @@ export class GonkaGate implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 
 		for (let itemIndex = 0; itemIndex < itemCount; itemIndex++) {
+			let operationName = 'Operation';
+
 			try {
 				const operation = this.getNodeParameter(
 					'operation',
 					itemIndex,
 					GONKAGATE_DEFAULT_OPERATION,
 				) as GonkaGateOperation;
+				operationName = getGonkaGateOperationDisplayName(operation);
 
 				const operationData = await executeGonkaGateOperation(this, operation, itemIndex);
 
@@ -66,24 +71,38 @@ export class GonkaGate implements INodeType {
 					});
 				}
 			} catch (error) {
+				const normalizedError = normalizeExecutionError(
+					this.getNode(),
+					error,
+					itemIndex,
+					operationName,
+				);
+
 				if (this.continueOnFail()) {
 					returnData.push({
-						json: serializeGonkaGateError(error),
+						json: serializeGonkaGateError(normalizedError),
 						pairedItem: inputItems.length > 0 ? { item: itemIndex } : undefined,
 					});
 					continue;
 				}
 
-				if (error instanceof NodeApiError || error instanceof NodeOperationError) {
-					throw error;
-				}
-
-				throw new NodeOperationError(this.getNode(), error as Error, {
-					itemIndex,
-				});
+				throw normalizedError;
 			}
 		}
 
 		return [returnData];
 	}
+}
+
+function normalizeExecutionError(
+	node: INode,
+	error: unknown,
+	itemIndex: number,
+	operationName: string,
+): NodeApiError | NodeOperationError {
+	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
+		return error;
+	}
+
+	return normalizeGonkaGateError(node, error, itemIndex, operationName);
 }

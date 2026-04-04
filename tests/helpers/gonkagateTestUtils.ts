@@ -33,6 +33,7 @@ export function createExecuteContext(input: {
 	httpRequest: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
 	continueOnFail?: boolean;
 	inputData?: INodeExecutionData[];
+	getNodeParameter?: (parameterName: string, itemIndex: number, fallbackValue?: unknown) => unknown;
 }): IExecuteFunctions {
 	const inputData = input.inputData ?? [];
 
@@ -44,6 +45,10 @@ export function createExecuteContext(input: {
 			return createNode();
 		},
 		getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
+			if (input.getNodeParameter !== undefined) {
+				return input.getNodeParameter(parameterName, itemIndex, fallbackValue);
+			}
+
 			return input.parameters[itemIndex]?.[parameterName] ?? fallbackValue;
 		},
 		continueOnFail() {

@@ -6,7 +6,10 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import { createGonkaGateChatModelOptionsProperty } from '../../shared/GonkaGate/chatParameters';
+import {
+	createGonkaGateChatModelOptionsProperty,
+	createGonkaGateStreamingProperty,
+} from '../../shared/GonkaGate/chatParameters';
 import { supplyGonkaGateChatModel } from '../../shared/GonkaGate/chatModel';
 import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
 import {
@@ -38,14 +41,7 @@ export class LmChatGonkaGate implements INodeType {
 		],
 		properties: [
 			createGonkaGateModelSelectorProperty(),
-			{
-				displayName: 'Enable Streaming',
-				name: 'streaming',
-				type: 'boolean',
-				default: true,
-				description:
-					'Whether n8n AI workflows should use GonkaGate SSE streaming on /v1/chat/completions when the surrounding workflow path supports visible live streaming',
-			},
+			createGonkaGateStreamingProperty(),
 			createGonkaGateChatModelOptionsProperty(),
 		],
 	};

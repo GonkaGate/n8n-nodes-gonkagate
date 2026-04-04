@@ -73,6 +73,10 @@ export async function executeGonkaGateOperation(
 	return await GONKAGATE_OPERATION_DEFINITIONS[operation].execute(context, itemIndex);
 }
 
+export function getGonkaGateOperationDisplayName(operation: GonkaGateOperation): string {
+	return GONKAGATE_OPERATION_DEFINITIONS[operation].name;
+}
+
 function withOperationDisplayOptions(
 	operation: GonkaGateOperation,
 	property: INodeProperties,

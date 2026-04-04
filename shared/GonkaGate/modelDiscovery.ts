@@ -77,7 +77,7 @@ export function parseGonkaGateModelsResponse(
 	response: GonkaGateModelsResponse,
 ): GonkaGateModelRecord[] {
 	if (!Array.isArray(response.data)) {
-		return [];
+		throw new Error('GonkaGate models response must contain a data array');
 	}
 
 	return response.data

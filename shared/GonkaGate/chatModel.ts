@@ -35,7 +35,7 @@ export function buildGonkaGateChatModelSupplyOptions(input: {
 		model: chatParameters.model,
 		useResponsesApi: false,
 		streaming: chatParameters.stream,
-		...chatParameters.options,
+		...chatParameters.aiModelOptions,
 	};
 }
 

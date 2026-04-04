@@ -221,7 +221,7 @@ function extractRequestId(error: unknown): string | undefined {
 	}
 
 	for (const headerName of REQUEST_ID_HEADER_NAMES) {
-		const headerValue = headers[headerName];
+		const headerValue = getHeaderValue(headers, headerName);
 
 		if (typeof headerValue === 'string' && headerValue.length > 0) {
 			return headerValue;
@@ -233,6 +233,29 @@ function extractRequestId(error: unknown): string | undefined {
 			headerValue[0].length > 0
 		) {
 			return headerValue[0];
+		}
+	}
+
+	return undefined;
+}
+
+function getHeaderValue(
+	headers: Record<string, unknown>,
+	headerName: string,
+): string | string[] | undefined {
+	const normalizedHeaderName = headerName.toLowerCase();
+
+	for (const [key, value] of Object.entries(headers)) {
+		if (key.toLowerCase() !== normalizedHeaderName) {
+			continue;
+		}
+
+		if (typeof value === 'string') {
+			return value;
+		}
+
+		if (Array.isArray(value) && value.every((item) => typeof item === 'string')) {
+			return value;
 		}
 	}
 

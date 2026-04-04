@@ -4,7 +4,11 @@ import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
 import { buildGonkaGateChatCompletionRequestBody } from '../shared/GonkaGate/chatParameters';
 import { resolveGonkaGateBaseUrl } from '../shared/GonkaGate/credentials';
-import { normalizeGonkaGateError, serializeGonkaGateError } from '../shared/GonkaGate/errors';
+import {
+	isRecoverableGonkaGateError,
+	normalizeGonkaGateError,
+	serializeGonkaGateError,
+} from '../shared/GonkaGate/errors';
 import {
 	buildGonkaGateModelSearchResults,
 	parseGonkaGateModelsResponse,
@@ -86,22 +90,21 @@ test('buildGonkaGateChatCompletionRequestBody normalizes chat payloads', () => {
 		rawMessages: '[{"role":"user","content":"Hello from n8n"}]',
 		rawStreaming: false,
 		rawOptions: {
+			maxRetries: 4,
 			maxTokens: 256,
 			temperature: 0.3,
+			timeout: 1500,
 		},
 		itemIndex: 0,
 	});
 
-	assert.deepEqual(
-		requestBody,
-		{
-			model: 'manual-model',
-			messages: [{ role: 'user', content: 'Hello from n8n' }],
-			stream: false,
-			maxTokens: 256,
-			temperature: 0.3,
-		},
-	);
+	assert.deepEqual(requestBody, {
+		model: 'manual-model',
+		messages: [{ role: 'user', content: 'Hello from n8n' }],
+		stream: false,
+		maxTokens: 256,
+		temperature: 0.3,
+	});
 });
 
 test('searchGonkaGateModels falls back to an empty list for recoverable upstream failures', async () => {
@@ -125,7 +128,7 @@ test('searchGonkaGateModels falls back to an empty list for recoverable upstream
 	assert.deepEqual(results, { results: [] });
 });
 
-test('searchGonkaGateModels surfaces credential or contract failures instead of hiding them', async () => {
+test('searchGonkaGateModels surfaces credential failures instead of hiding them', async () => {
 	await assert.rejects(
 		searchGonkaGateModels.call(
 			createLoadOptionsContext({
@@ -146,6 +149,23 @@ test('searchGonkaGateModels surfaces credential or contract failures instead of 
 		(error) =>
 			error instanceof NodeApiError &&
 			/Authorization failed|check your credentials/.test(error.message),
+	);
+});
+
+test('searchGonkaGateModels surfaces malformed models payloads instead of hiding them', async () => {
+	await assert.rejects(
+		searchGonkaGateModels.call(
+			createLoadOptionsContext({
+				credentialsSelected: true,
+				httpRequest: async () => ({
+					data: {
+						id: 'not-an-array',
+					},
+				}),
+			}),
+			'',
+		),
+		/GonkaGate models response must contain a data array/,
 	);
 });
 
@@ -193,7 +213,7 @@ test('serializeGonkaGateError keeps normalized request metadata for continueOnFa
 			message: 'socket timed out',
 			response: {
 				headers: {
-					'x-request-id': 'req_123',
+					'X-Request-Id': 'req_123',
 				},
 				data: {
 					message: 'socket timed out',
@@ -211,7 +231,7 @@ test('serializeGonkaGateError keeps normalized request metadata for continueOnFa
 	});
 });
 
-test('normalizeGonkaGateError keeps recoverable metadata outside framework error objects', () => {
+test('normalizeGonkaGateError preserves the recoverable upstream error contract', () => {
 	const error = normalizeGonkaGateError(
 		createNode(),
 		{
@@ -230,8 +250,7 @@ test('normalizeGonkaGateError keeps recoverable metadata outside framework error
 		'Chat Completion',
 	);
 
-	assert.equal(error.context.requestId, undefined);
-	assert.equal((error.context as { recoverable?: boolean }).recoverable, undefined);
+	assert.equal(isRecoverableGonkaGateError(error), true);
 	assert.deepEqual(serializeGonkaGateError(error), {
 		error: 'The GonkaGate request timed out',
 		description: 'socket timed out\nRequest ID: req_456',
