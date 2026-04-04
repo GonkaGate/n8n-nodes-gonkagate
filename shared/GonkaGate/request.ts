@@ -1,8 +1,8 @@
-import type { IDataObject, IHttpRequestOptions, INode } from 'n8n-workflow';
+import type { IDataObject, INode } from 'n8n-workflow';
 
-import { buildGonkaGateDefaultHeaders } from './credentials';
 import { normalizeGonkaGateError } from './errors';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
+import { buildGonkaGateRequestOptions, type GonkaGateRequestOptions } from './transport';
 
 type GonkaGateRequestContext = {
 	getNode(): INode;
@@ -15,40 +15,50 @@ type GonkaGateRequestContext = {
 	};
 };
 
-export type GonkaGateRequestOptions = IHttpRequestOptions & {
-	json?: boolean;
-};
-
-export function buildGonkaGateRequestOptions(
-	requestOptions: GonkaGateRequestOptions,
-): GonkaGateRequestOptions {
-	const { body, headers, json = true, ...restRequestOptions } = requestOptions;
-	const normalizedHeaders = (headers ?? {}) as Record<string, string>;
-
-	return {
-		...restRequestOptions,
-		...(body !== undefined ? { body } : {}),
-		json,
-		headers: buildGonkaGateDefaultHeaders({
-			...(body !== undefined && json ? { 'Content-Type': 'application/json' } : {}),
-			...normalizedHeaders,
-		}),
-	};
-}
+type GonkaGateResponseParser<T> = (response: unknown) => T;
 
 export async function gonkaGateRequest<T extends IDataObject = IDataObject>(
 	context: GonkaGateRequestContext,
 	operationName: string,
 	requestOptions: GonkaGateRequestOptions,
-	itemIndex = 0,
+	input:
+		| number
+		| {
+				itemIndex?: number;
+				parseResponse?: GonkaGateResponseParser<T>;
+		  } = 0,
 ): Promise<T> {
+	const { itemIndex, parseResponse } =
+		typeof input === 'number'
+			? { itemIndex: input, parseResponse: parseGonkaGateDataObjectResponse }
+			: {
+					itemIndex: input.itemIndex ?? 0,
+					parseResponse: input.parseResponse ?? parseGonkaGateDataObjectResponse,
+				};
+
 	try {
-		return (await context.helpers.httpRequestWithAuthentication.call(
+		const response = await context.helpers.httpRequestWithAuthentication.call(
 			context,
 			GONKAGATE_CREDENTIAL_NAME,
 			buildGonkaGateRequestOptions(requestOptions),
-		)) as T;
+		);
+
+		return parseResponse(response);
 	} catch (error) {
 		throw normalizeGonkaGateError(context.getNode(), error, itemIndex, operationName);
 	}
+}
+
+export function parseGonkaGateDataObjectResponse<T extends IDataObject = IDataObject>(
+	response: unknown,
+): T {
+	if (!isDataObject(response)) {
+		throw new Error('GonkaGate response must be a JSON object');
+	}
+
+	return response as T;
+}
+
+function isDataObject(value: unknown): value is IDataObject {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

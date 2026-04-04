@@ -37,66 +37,87 @@ export function createExecuteContext(input: {
 }): IExecuteFunctions {
 	const inputData = input.inputData ?? [];
 
-	return {
-		getInputData() {
-			return inputData;
-		},
-		getNode() {
-			return createNode();
-		},
-		getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
-			if (input.getNodeParameter !== undefined) {
-				return input.getNodeParameter(parameterName, itemIndex, fallbackValue);
-			}
+	return asStrictContext(
+		{
+			getInputData() {
+				return inputData;
+			},
+			getNode() {
+				return createNode();
+			},
+			getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
+				if (input.getNodeParameter !== undefined) {
+					return input.getNodeParameter(parameterName, itemIndex, fallbackValue);
+				}
 
-			return input.parameters[itemIndex]?.[parameterName] ?? fallbackValue;
+				return input.parameters[itemIndex]?.[parameterName] ?? fallbackValue;
+			},
+			continueOnFail() {
+				return input.continueOnFail ?? false;
+			},
+			helpers: {
+				httpRequestWithAuthentication: input.httpRequest,
+			},
 		},
-		continueOnFail() {
-			return input.continueOnFail ?? false;
-		},
-		helpers: {
-			httpRequestWithAuthentication: input.httpRequest,
-		},
-	} as unknown as IExecuteFunctions;
+		'IExecuteFunctions',
+	) as unknown as IExecuteFunctions;
 }
 
 export function createLoadOptionsContext(input: {
 	credentialsSelected: boolean;
 	httpRequest: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
 }): ILoadOptionsFunctions {
-	return {
-		getNode() {
-			return {
-				...createNode(),
-				credentials: input.credentialsSelected
-					? {
-							[GONKAGATE_CREDENTIAL_NAME]: {
-								id: '1',
-								name: 'Test GonkaGate Credential',
-							},
-						}
-					: undefined,
-			};
+	return asStrictContext(
+		{
+			getNode() {
+				return {
+					...createNode(),
+					credentials: input.credentialsSelected
+						? {
+								[GONKAGATE_CREDENTIAL_NAME]: {
+									id: '1',
+									name: 'Test GonkaGate Credential',
+								},
+							}
+						: undefined,
+				};
+			},
+			helpers: {
+				httpRequestWithAuthentication: input.httpRequest,
+			},
 		},
-		helpers: {
-			httpRequestWithAuthentication: input.httpRequest,
-		},
-	} as unknown as ILoadOptionsFunctions;
+		'ILoadOptionsFunctions',
+	) as unknown as ILoadOptionsFunctions;
 }
 
 export function createSupplyContext(input: {
 	credentials: Record<string, unknown>;
 	parameters: Record<string, unknown>;
 }): ISupplyDataFunctions {
-	return {
-		getNode() {
-			return createNode();
+	return asStrictContext(
+		{
+			getNode() {
+				return createNode();
+			},
+			async getCredentials() {
+				return input.credentials;
+			},
+			getNodeParameter(parameterName: string, _itemIndex: number, fallbackValue?: unknown) {
+				return input.parameters[parameterName] ?? fallbackValue;
+			},
 		},
-		async getCredentials() {
-			return input.credentials;
+		'ISupplyDataFunctions',
+	) as unknown as ISupplyDataFunctions;
+}
+
+function asStrictContext<T extends object>(context: T, label: string): T {
+	return new Proxy(context, {
+		get(target, property, receiver) {
+			if (typeof property === 'symbol' || property in target) {
+				return Reflect.get(target, property, receiver);
+			}
+
+			throw new Error(`${label} mock does not implement ${String(property)}`);
 		},
-		getNodeParameter(parameterName: string, _itemIndex: number, fallbackValue?: unknown) {
-			return input.parameters[parameterName] ?? fallbackValue;
-		},
-	} as unknown as ISupplyDataFunctions;
+	});
 }

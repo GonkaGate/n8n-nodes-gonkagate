@@ -1,11 +1,10 @@
 import type {
 	IExecuteFunctions,
-	INode,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { normalizeGonkaGateError, serializeGonkaGateError } from '../../shared/GonkaGate/errors';
 import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
@@ -71,7 +70,7 @@ export class GonkaGate implements INodeType {
 					});
 				}
 			} catch (error) {
-				const normalizedError = normalizeExecutionError(
+				const normalizedError = normalizeGonkaGateError(
 					this.getNode(),
 					error,
 					itemIndex,
@@ -92,17 +91,4 @@ export class GonkaGate implements INodeType {
 
 		return [returnData];
 	}
-}
-
-function normalizeExecutionError(
-	node: INode,
-	error: unknown,
-	itemIndex: number,
-	operationName: string,
-): NodeApiError | NodeOperationError {
-	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
-		return error;
-	}
-
-	return normalizeGonkaGateError(node, error, itemIndex, operationName);
 }

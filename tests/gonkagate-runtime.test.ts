@@ -4,18 +4,14 @@ import test from 'node:test';
 import { GonkaGateApi } from '../credentials/GonkaGateApi.credentials';
 import { GonkaGate } from '../nodes/GonkaGate/GonkaGate.node';
 import { LmChatGonkaGate } from '../nodes/LmChatGonkaGate/LmChatGonkaGate.node';
-import { buildGonkaGateChatModelSupplyOptions } from '../shared/GonkaGate/chatModel';
+import { createGonkaGateChatModelSupplier } from '../shared/GonkaGate/chatModel';
 import {
 	GONKAGATE_BASE_URL,
 	GONKAGATE_CHAT_COMPLETIONS_PATH,
 	GONKAGATE_MODELS_PATH,
 } from '../shared/GonkaGate/constants';
 import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
-import {
-	createExecuteContext,
-	createNode,
-	createSupplyContext,
-} from './helpers/gonkagateTestUtils';
+import { createExecuteContext, createSupplyContext } from './helpers/gonkagateTestUtils';
 
 test('GonkaGate.execute composes shared request building with credential auth', async () => {
 	const requests: Array<{
@@ -212,28 +208,39 @@ test('GonkaGateApi.authenticate applies the shared credential authentication pol
 	});
 });
 
-test('buildGonkaGateChatModelSupplyOptions preserves the GonkaGate AI-model contract', () => {
-	const result = buildGonkaGateChatModelSupplyOptions({
-		context: {
-			getNode() {
-				return createNode();
-			},
-		},
+test('createGonkaGateChatModelSupplier forwards the GonkaGate AI-model contract to the SDK seam', async () => {
+	let suppliedContext: unknown;
+	let suppliedModel: unknown;
+
+	const supplyGonkaGateChatModel = createGonkaGateChatModelSupplier((context, model) => {
+		suppliedContext = context;
+		suppliedModel = model;
+
+		return {
+			response: { ok: true },
+		};
+	});
+
+	const context = createSupplyContext({
 		credentials: {
 			apiKey: 'test-key',
 			url: 'https://api.gonkagate.com/v1',
 		},
-		model: 'test-model',
-		streaming: false,
-		options: {
-			maxRetries: 3,
-			maxTokens: 128,
-			timeout: 1500,
+		parameters: {
+			model: 'test-model',
+			streaming: false,
+			options: {
+				maxRetries: 3,
+				maxTokens: 128,
+				timeout: 1500,
+			},
 		},
-		itemIndex: 0,
 	});
 
-	assert.deepEqual(result, {
+	const result = await supplyGonkaGateChatModel(context, 0);
+
+	assert.equal(suppliedContext, context);
+	assert.deepEqual(suppliedModel, {
 		type: 'openai',
 		baseUrl: GONKAGATE_BASE_URL,
 		apiKey: 'test-key',
@@ -246,6 +253,9 @@ test('buildGonkaGateChatModelSupplyOptions preserves the GonkaGate AI-model cont
 		maxRetries: 3,
 		maxTokens: 128,
 		timeout: 1500,
+	});
+	assert.deepEqual(result, {
+		response: { ok: true },
 	});
 });
 

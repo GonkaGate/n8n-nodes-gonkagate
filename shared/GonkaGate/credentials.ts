@@ -6,16 +6,15 @@ import {
 	LEGACY_GONKAGATE_BASE_URL_PLACEHOLDER,
 } from './constants';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
+import {
+	applyGonkaGateConnectionToRequest,
+	buildGonkaGateDefaultHeaders,
+	type GonkaGateConnectionConfig,
+} from './transport';
 
 export type GonkaGateCredentialData = {
 	apiKey?: string;
 	url?: string;
-};
-
-export type GonkaGateConnectionConfig = {
-	baseUrl: string;
-	apiKey: string;
-	defaultHeaders: Record<string, string>;
 };
 
 export function resolveGonkaGateBaseUrl(rawUrl: unknown): string {
@@ -36,15 +35,6 @@ export function resolveGonkaGateApiKey(rawApiKey: unknown): string {
 	}
 
 	return apiKey;
-}
-
-export function buildGonkaGateDefaultHeaders(
-	headers: Record<string, string> = {},
-): Record<string, string> {
-	return {
-		Accept: 'application/json',
-		...headers,
-	};
 }
 
 export function resolveGonkaGateConnectionConfig(
@@ -93,14 +83,8 @@ export async function authenticateGonkaGateRequest(
 	credentials: ICredentialDataDecryptedObject,
 	requestOptions: IHttpRequestOptions,
 ): Promise<IHttpRequestOptions> {
-	const connection = resolveGonkaGateConnectionConfig(credentials);
-
-	requestOptions.baseURL = requestOptions.baseURL ?? connection.baseUrl;
-	requestOptions.headers = {
-		...connection.defaultHeaders,
-		...(requestOptions.headers ?? {}),
-		Authorization: `Bearer ${connection.apiKey}`,
-	};
-
-	return requestOptions;
+	return applyGonkaGateConnectionToRequest(
+		resolveGonkaGateConnectionConfig(credentials),
+		requestOptions,
+	);
 }

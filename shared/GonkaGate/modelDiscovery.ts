@@ -8,7 +8,11 @@ import { NodeApiError } from 'n8n-workflow';
 
 import { hasGonkaGateCredential } from './credentials';
 import { isRecoverableGonkaGateError } from './errors';
-import { createListModelsRequestOptions, type GonkaGateModelsResponse } from './modelsApi';
+import {
+	createListModelsRequestOptions,
+	parseGonkaGateModelsApiResponse,
+	type GonkaGateModelsResponse,
+} from './modelsApi';
 import { gonkaGateRequest } from './request';
 
 export type GonkaGateModelRecord = IDataObject & {
@@ -54,6 +58,9 @@ export async function fetchGonkaGateModels(
 		context,
 		'List Models',
 		createListModelsRequestOptions(),
+		{
+			parseResponse: parseGonkaGateModelsApiResponse,
+		},
 	);
 
 	return parseGonkaGateModelsResponse(response);

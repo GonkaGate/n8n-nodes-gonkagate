@@ -7,6 +7,12 @@ type GonkaGateErrorContext = {
 	recoverable?: boolean;
 };
 
+const GONKAGATE_ERROR_CONTEXT_KEY = 'gonkaGateErrorContext';
+
+type GonkaGateNodeError = (NodeApiError | NodeOperationError) & {
+	[GONKAGATE_ERROR_CONTEXT_KEY]?: GonkaGateErrorContext;
+};
+
 const REQUEST_ID_HEADER_NAMES = [
 	'x-request-id',
 	'request-id',
@@ -21,11 +27,6 @@ const NETWORK_ERROR_MESSAGES: Record<string, string> = {
 	ECONNRESET: 'The connection to GonkaGate was interrupted',
 	EHOSTUNREACH: 'The GonkaGate host was unreachable',
 };
-
-const gonkaGateErrorMetadata = new WeakMap<
-	NodeApiError | NodeOperationError,
-	GonkaGateErrorContext
->();
 
 export function normalizeGonkaGateError(
 	node: INode,
@@ -157,7 +158,7 @@ function attachErrorContext<T extends NodeApiError | NodeOperationError>(
 ): T {
 	const currentContext = getErrorContext(error) ?? {};
 
-	gonkaGateErrorMetadata.set(error, {
+	(error as GonkaGateNodeError)[GONKAGATE_ERROR_CONTEXT_KEY] = {
 		itemIndex: currentContext.itemIndex ?? itemIndex,
 		requestId:
 			currentContext.requestId ??
@@ -165,7 +166,7 @@ function attachErrorContext<T extends NodeApiError | NodeOperationError>(
 				? context.requestId
 				: undefined),
 		recoverable: currentContext.recoverable ?? context.recoverable,
-	});
+	};
 
 	return error;
 }
@@ -173,7 +174,7 @@ function attachErrorContext<T extends NodeApiError | NodeOperationError>(
 function getErrorContext(
 	error: NodeApiError | NodeOperationError,
 ): GonkaGateErrorContext | undefined {
-	return gonkaGateErrorMetadata.get(error);
+	return (error as GonkaGateNodeError)[GONKAGATE_ERROR_CONTEXT_KEY];
 }
 
 function buildErrorDescription(error: unknown, requestId?: string): string | undefined {

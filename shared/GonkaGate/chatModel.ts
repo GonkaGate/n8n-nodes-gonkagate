@@ -5,6 +5,9 @@ import type { IDataObject, ISupplyDataFunctions, SupplyData } from 'n8n-workflow
 import { resolveRequiredGonkaGateConnectionConfig } from './credentials';
 import { resolveGonkaGateChatParameters } from './chatParameters';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
+import { createGonkaGateAiModelConnection } from './transport';
+
+type GonkaGateSupplyModel = typeof supplyModel;
 
 export function buildGonkaGateChatModelSupplyOptions(input: {
 	context: Pick<ISupplyDataFunctions, 'getNode'>;
@@ -29,9 +32,7 @@ export function buildGonkaGateChatModelSupplyOptions(input: {
 
 	return {
 		type: 'openai',
-		baseUrl: connection.baseUrl,
-		apiKey: connection.apiKey,
-		defaultHeaders: connection.defaultHeaders,
+		...createGonkaGateAiModelConnection(connection),
 		model: chatParameters.model,
 		useResponsesApi: false,
 		streaming: chatParameters.stream,
@@ -39,22 +40,28 @@ export function buildGonkaGateChatModelSupplyOptions(input: {
 	};
 }
 
-export async function supplyGonkaGateChatModel(
-	context: ISupplyDataFunctions,
-	itemIndex: number,
-): Promise<SupplyData> {
-	const credentials = await context.getCredentials(GONKAGATE_CREDENTIAL_NAME, itemIndex);
-	const options = context.getNodeParameter('options', itemIndex, {}) as IDataObject;
+export function createGonkaGateChatModelSupplier(
+	supplyModelDependency: GonkaGateSupplyModel = supplyModel,
+) {
+	return async function supplyGonkaGateChatModel(
+		context: ISupplyDataFunctions,
+		itemIndex: number,
+	): Promise<SupplyData> {
+		const credentials = await context.getCredentials(GONKAGATE_CREDENTIAL_NAME, itemIndex);
+		const options = context.getNodeParameter('options', itemIndex, {}) as IDataObject;
 
-	return supplyModel(
-		context,
-		buildGonkaGateChatModelSupplyOptions({
+		return supplyModelDependency(
 			context,
-			credentials,
-			model: context.getNodeParameter('model', itemIndex),
-			streaming: context.getNodeParameter('streaming', itemIndex, true) as boolean,
-			options,
-			itemIndex,
-		}),
-	);
+			buildGonkaGateChatModelSupplyOptions({
+				context,
+				credentials,
+				model: context.getNodeParameter('model', itemIndex),
+				streaming: context.getNodeParameter('streaming', itemIndex, true) as boolean,
+				options,
+				itemIndex,
+			}),
+		);
+	};
 }
+
+export const supplyGonkaGateChatModel = createGonkaGateChatModelSupplier();
