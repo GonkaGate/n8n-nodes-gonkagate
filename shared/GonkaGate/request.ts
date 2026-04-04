@@ -21,20 +21,12 @@ export async function gonkaGateRequest<T extends IDataObject = IDataObject>(
 	context: GonkaGateRequestContext,
 	operationName: string,
 	requestOptions: GonkaGateRequestOptions,
-	input:
-		| number
-		| {
-				itemIndex?: number;
-				parseResponse?: GonkaGateResponseParser<T>;
-		  } = 0,
+	input: {
+		itemIndex?: number;
+		parseResponse: GonkaGateResponseParser<T>;
+	},
 ): Promise<T> {
-	const { itemIndex, parseResponse } =
-		typeof input === 'number'
-			? { itemIndex: input, parseResponse: parseGonkaGateDataObjectResponse }
-			: {
-					itemIndex: input.itemIndex ?? 0,
-					parseResponse: input.parseResponse ?? parseGonkaGateDataObjectResponse,
-				};
+	const { itemIndex = 0, parseResponse } = input;
 
 	try {
 		const response = await context.helpers.httpRequestWithAuthentication.call(

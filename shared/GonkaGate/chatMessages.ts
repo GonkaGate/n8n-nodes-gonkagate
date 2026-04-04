@@ -1,13 +1,15 @@
 import type { IDataObject, INode, INodeProperties } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
+import { GONKAGATE_MESSAGES_PARAMETER_NAME } from './parameters';
+
 const CHAT_MESSAGES_EXAMPLE =
 	'Provide an array of OpenAI-compatible chat message objects, for example [{"role":"user","content":"Hello from n8n"}].';
 
 export function createGonkaGateChatMessagesProperty(): INodeProperties {
 	return {
 		displayName: 'Messages (JSON)',
-		name: 'messages',
+		name: GONKAGATE_MESSAGES_PARAMETER_NAME,
 		type: 'json',
 		default: '[\n  {\n    "role": "user",\n    "content": "Hello from n8n"\n  }\n]',
 		required: true,

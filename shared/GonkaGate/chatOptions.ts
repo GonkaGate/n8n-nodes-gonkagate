@@ -1,5 +1,7 @@
 import type { IDataObject, INodeProperties } from 'n8n-workflow';
 
+import { GONKAGATE_OPTIONS_PARAMETER_NAME } from './parameters';
+
 type GonkaGateChatOptionTarget = 'requestBody' | 'aiModel';
 
 export type GonkaGateChatOptionKey =
@@ -127,7 +129,7 @@ const GONKAGATE_CHAT_OPTION_KEYS = Object.keys(
 export function createGonkaGateChatModelOptionsProperty(): INodeProperties {
 	return {
 		displayName: 'Options',
-		name: 'options',
+		name: GONKAGATE_OPTIONS_PARAMETER_NAME,
 		type: 'collection',
 		placeholder: 'Add Option',
 		default: {},

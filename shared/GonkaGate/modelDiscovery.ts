@@ -13,6 +13,7 @@ import {
 	parseGonkaGateModelsApiResponse,
 	type GonkaGateModelsResponse,
 } from './modelsApi';
+import { GONKAGATE_LIST_MODELS_OPERATION_NAME } from './operationNames';
 import { gonkaGateRequest } from './request';
 
 export type GonkaGateModelRecord = IDataObject & {
@@ -56,7 +57,7 @@ export async function fetchGonkaGateModels(
 ): Promise<GonkaGateModelRecord[]> {
 	const response = await gonkaGateRequest<GonkaGateModelsResponse>(
 		context,
-		'List Models',
+		GONKAGATE_LIST_MODELS_OPERATION_NAME,
 		createListModelsRequestOptions(),
 		{
 			parseResponse: parseGonkaGateModelsApiResponse,

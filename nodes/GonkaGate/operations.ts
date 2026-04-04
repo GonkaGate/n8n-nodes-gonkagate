@@ -5,8 +5,22 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 
-import { executeChatCompletion, gonkaGateChatCompletionProperties } from './actions/chatCompletion';
-import { executeListModels } from './actions/listModels';
+import { GONKAGATE_OPERATION_PARAMETER_NAME } from '../../shared/GonkaGate/parameters';
+import {
+	GONKAGATE_CHAT_COMPLETION_OPERATION_NAME,
+	GONKAGATE_LIST_MODELS_OPERATION_NAME,
+} from '../../shared/GonkaGate/operationNames';
+import {
+	executeChatCompletion,
+	GONKAGATE_CHAT_COMPLETION_OPERATION_ACTION,
+	GONKAGATE_CHAT_COMPLETION_OPERATION_DESCRIPTION,
+	gonkaGateChatCompletionProperties,
+} from './actions/chatCompletion';
+import {
+	executeListModels,
+	GONKAGATE_LIST_MODELS_OPERATION_ACTION,
+	GONKAGATE_LIST_MODELS_OPERATION_DESCRIPTION,
+} from './actions/listModels';
 
 type GonkaGateOperationDefinition = {
 	name: string;
@@ -18,16 +32,16 @@ type GonkaGateOperationDefinition = {
 
 const GONKAGATE_OPERATION_DEFINITIONS = {
 	chatCompletion: {
-		name: 'Chat Completion',
-		action: 'Create a chat completion',
-		description: 'Send a non-streaming chat completion request to GonkaGate',
+		name: GONKAGATE_CHAT_COMPLETION_OPERATION_NAME,
+		action: GONKAGATE_CHAT_COMPLETION_OPERATION_ACTION,
+		description: GONKAGATE_CHAT_COMPLETION_OPERATION_DESCRIPTION,
 		properties: gonkaGateChatCompletionProperties,
 		execute: executeChatCompletion,
 	},
 	listModels: {
-		name: 'List Models',
-		action: 'List available models',
-		description: 'List the models currently exposed by GonkaGate',
+		name: GONKAGATE_LIST_MODELS_OPERATION_NAME,
+		action: GONKAGATE_LIST_MODELS_OPERATION_ACTION,
+		description: GONKAGATE_LIST_MODELS_OPERATION_DESCRIPTION,
 		properties: [],
 		execute: executeListModels,
 	},
@@ -44,7 +58,7 @@ const GONKAGATE_OPERATION_KEYS = Object.keys(
 export function createGonkaGateOperationProperty(): INodeProperties {
 	return {
 		displayName: 'Operation',
-		name: 'operation',
+		name: GONKAGATE_OPERATION_PARAMETER_NAME,
 		type: 'options',
 		noDataExpression: true,
 		default: GONKAGATE_DEFAULT_OPERATION,
@@ -95,7 +109,7 @@ function mergeDisplayOptions(
 		...(displayOptions ?? {}),
 		show: {
 			...(displayOptions?.show ?? {}),
-			operation: [operation],
+			[GONKAGATE_OPERATION_PARAMETER_NAME]: [operation],
 		},
 	};
 }

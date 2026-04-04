@@ -8,18 +8,26 @@ import type {
 } from 'n8n-workflow';
 
 import { GONKAGATE_BASE_URL } from '../shared/GonkaGate/constants';
-import { authenticateGonkaGateRequest } from '../shared/GonkaGate/credentials';
+import {
+	authenticateGonkaGateRequest,
+	createGonkaGateCredentialTestRequest,
+} from '../shared/GonkaGate/credentials';
 import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
-import { createListModelsRequestOptions } from '../shared/GonkaGate/modelsApi';
+import {
+	GONKAGATE_API_KEY_DESCRIPTION,
+	GONKAGATE_CREDENTIAL_DISPLAY_NAME,
+	GONKAGATE_CREDENTIAL_DOCUMENTATION_URL,
+	GONKAGATE_CREDENTIAL_ICON,
+} from '../shared/GonkaGate/metadata';
 
 export class GonkaGateApi implements ICredentialType {
 	name = GONKAGATE_CREDENTIAL_NAME;
 
-	displayName = 'GonkaGate API';
+	displayName = GONKAGATE_CREDENTIAL_DISPLAY_NAME;
 
-	icon: Icon = 'file:../nodes/GonkaGate/gonkagate.svg';
+	icon: Icon = GONKAGATE_CREDENTIAL_ICON;
 
-	documentationUrl = 'https://github.com/GonkaGate/n8n-nodes-gonkagate#credentials';
+	documentationUrl = GONKAGATE_CREDENTIAL_DOCUMENTATION_URL;
 
 	properties: INodeProperties[] = [
 		{
@@ -31,7 +39,7 @@ export class GonkaGateApi implements ICredentialType {
 			},
 			default: '',
 			required: true,
-			description: 'API key used to authenticate requests to GonkaGate',
+			description: GONKAGATE_API_KEY_DESCRIPTION,
 		},
 		{
 			displayName: 'Base URL',
@@ -42,7 +50,7 @@ export class GonkaGateApi implements ICredentialType {
 	];
 
 	test: ICredentialTestRequest = {
-		request: createListModelsRequestOptions(),
+		request: createGonkaGateCredentialTestRequest(),
 	};
 
 	async authenticate(

@@ -93,16 +93,38 @@ export function createLoadOptionsContext(input: {
 export function createSupplyContext(input: {
 	credentials: Record<string, unknown>;
 	parameters: Record<string, unknown>;
+	expectedCredentialItemIndex?: number;
+	expectedParameterItemIndex?: number;
+	getCredentials?: (
+		credentialName: string,
+		itemIndex: number,
+	) => Promise<Record<string, unknown>> | Record<string, unknown>;
 }): ISupplyDataFunctions {
 	return asStrictContext(
 		{
 			getNode() {
 				return createNode();
 			},
-			async getCredentials() {
+			async getCredentials(credentialName: string, itemIndex: number) {
+				if (input.getCredentials !== undefined) {
+					return await input.getCredentials(credentialName, itemIndex);
+				}
+
+				if (credentialName !== GONKAGATE_CREDENTIAL_NAME) {
+					throw new Error(`Unexpected credential lookup: ${credentialName}`);
+				}
+
+				if (itemIndex !== (input.expectedCredentialItemIndex ?? 0)) {
+					throw new Error(`Unexpected credential item index: ${itemIndex}`);
+				}
+
 				return input.credentials;
 			},
-			getNodeParameter(parameterName: string, _itemIndex: number, fallbackValue?: unknown) {
+			getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
+				if (itemIndex !== (input.expectedParameterItemIndex ?? 0)) {
+					throw new Error(`Unexpected parameter item index: ${itemIndex}`);
+				}
+
 				return input.parameters[parameterName] ?? fallbackValue;
 			},
 		},

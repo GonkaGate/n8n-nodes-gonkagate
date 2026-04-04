@@ -1,18 +1,18 @@
-import type { IDataObject, IHttpRequestOptions } from 'n8n-workflow';
+import type { IDataObject } from 'n8n-workflow';
 
 import { GONKAGATE_MODELS_PATH } from './constants';
 import { parseGonkaGateDataObjectResponse } from './request';
-import { buildGonkaGateRequestOptions } from './transport';
+import type { GonkaGateRequestOptions } from './transport';
 
 export type GonkaGateModelsResponse = IDataObject & {
 	data?: unknown;
 };
 
-export function createListModelsRequestOptions(): IHttpRequestOptions {
-	return buildGonkaGateRequestOptions({
+export function createListModelsRequestOptions(): GonkaGateRequestOptions {
+	return {
 		method: 'GET',
 		url: GONKAGATE_MODELS_PATH,
-	});
+	};
 }
 
 export function parseGonkaGateModelsApiResponse(response: unknown): GonkaGateModelsResponse {

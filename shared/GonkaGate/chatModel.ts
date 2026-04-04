@@ -1,10 +1,15 @@
 import { supplyModel } from 'ai-node-sdk';
 import type { OpenAiModel } from 'ai-node-sdk';
-import type { IDataObject, ISupplyDataFunctions, SupplyData } from 'n8n-workflow';
+import type { ISupplyDataFunctions, SupplyData } from 'n8n-workflow';
 
 import { resolveRequiredGonkaGateConnectionConfig } from './credentials';
-import { resolveGonkaGateChatParameters } from './chatParameters';
+import {
+	resolveGonkaGateChatParametersFromContext,
+	type ResolvedGonkaGateChatParameters,
+} from './chatParameters';
+import { normalizeGonkaGateError } from './errors';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
+import { GONKAGATE_CHAT_MODEL_DISPLAY_NAME } from './metadata';
 import { createGonkaGateAiModelConnection } from './transport';
 
 type GonkaGateSupplyModel = typeof supplyModel;
@@ -12,9 +17,7 @@ type GonkaGateSupplyModel = typeof supplyModel;
 export function buildGonkaGateChatModelSupplyOptions(input: {
 	context: Pick<ISupplyDataFunctions, 'getNode'>;
 	credentials: Record<string, unknown>;
-	model: unknown;
-	streaming: boolean;
-	options: IDataObject;
+	chatParameters: ResolvedGonkaGateChatParameters;
 	itemIndex: number;
 }): OpenAiModel {
 	const connection = resolveRequiredGonkaGateConnectionConfig(
@@ -22,21 +25,14 @@ export function buildGonkaGateChatModelSupplyOptions(input: {
 		input.credentials,
 		input.itemIndex,
 	);
-	const chatParameters = resolveGonkaGateChatParameters({
-		node: input.context.getNode(),
-		rawModel: input.model,
-		rawStreaming: input.streaming,
-		rawOptions: input.options,
-		itemIndex: input.itemIndex,
-	});
 
 	return {
 		type: 'openai',
 		...createGonkaGateAiModelConnection(connection),
-		model: chatParameters.model,
+		model: input.chatParameters.model,
 		useResponsesApi: false,
-		streaming: chatParameters.stream,
-		...chatParameters.aiModelOptions,
+		streaming: input.chatParameters.stream,
+		...input.chatParameters.aiModelOptions,
 	};
 }
 
@@ -47,20 +43,27 @@ export function createGonkaGateChatModelSupplier(
 		context: ISupplyDataFunctions,
 		itemIndex: number,
 	): Promise<SupplyData> {
-		const credentials = await context.getCredentials(GONKAGATE_CREDENTIAL_NAME, itemIndex);
-		const options = context.getNodeParameter('options', itemIndex, {}) as IDataObject;
+		try {
+			const credentials = await context.getCredentials(GONKAGATE_CREDENTIAL_NAME, itemIndex);
+			const chatParameters = resolveGonkaGateChatParametersFromContext(context, itemIndex);
 
-		return supplyModelDependency(
-			context,
-			buildGonkaGateChatModelSupplyOptions({
+			return await supplyModelDependency(
 				context,
-				credentials,
-				model: context.getNodeParameter('model', itemIndex),
-				streaming: context.getNodeParameter('streaming', itemIndex, true) as boolean,
-				options,
+				buildGonkaGateChatModelSupplyOptions({
+					context,
+					credentials,
+					chatParameters,
+					itemIndex,
+				}),
+			);
+		} catch (error) {
+			throw normalizeGonkaGateError(
+				context.getNode(),
+				error,
 				itemIndex,
-			}),
-		);
+				GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
+			);
+		}
 	};
 }
 

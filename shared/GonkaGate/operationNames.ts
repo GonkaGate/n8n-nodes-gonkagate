@@ -1,0 +1,3 @@
+export const GONKAGATE_CHAT_COMPLETION_OPERATION_NAME = 'Chat Completion';
+
+export const GONKAGATE_LIST_MODELS_OPERATION_NAME = 'List Models';

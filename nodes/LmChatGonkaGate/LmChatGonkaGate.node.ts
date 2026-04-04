@@ -6,30 +6,28 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import {
-	createGonkaGateChatModelOptionsProperty,
-	createGonkaGateStreamingProperty,
-} from '../../shared/GonkaGate/chatParameters';
+import { gonkaGateChatModelProperties } from '../../shared/GonkaGate/chatParameters';
 import { supplyGonkaGateChatModel } from '../../shared/GonkaGate/chatModel';
 import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
+import { GONKAGATE_MODEL_SELECTOR_FEATURES } from '../../shared/GonkaGate/modelParameter';
 import {
-	createGonkaGateModelSearchMethods,
-	createGonkaGateModelSelectorProperty,
-} from '../../shared/GonkaGate/modelParameter';
+	GONKAGATE_CHAT_MODEL_DESCRIPTION,
+	GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
+	GONKAGATE_NODE_ICON,
+} from '../../shared/GonkaGate/metadata';
 
 export class LmChatGonkaGate implements INodeType {
-	methods = createGonkaGateModelSearchMethods();
+	methods = GONKAGATE_MODEL_SELECTOR_FEATURES.methods;
 
 	description: INodeTypeDescription = {
-		displayName: 'GonkaGate Chat Model',
+		displayName: GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
 		name: 'lmChatGonkaGate',
-		icon: 'file:gonkagate.svg',
+		icon: GONKAGATE_NODE_ICON,
 		group: ['transform'],
 		version: [1],
-		description:
-			'Use GonkaGate chat-completions models in AI workflows while keeping the provider-branded GonkaGate package surface',
+		description: GONKAGATE_CHAT_MODEL_DESCRIPTION,
 		defaults: {
-			name: 'GonkaGate Chat Model',
+			name: GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
 		},
 		inputs: [],
 		outputs: [NodeConnectionTypes.AiLanguageModel],
@@ -39,11 +37,7 @@ export class LmChatGonkaGate implements INodeType {
 				required: true,
 			},
 		],
-		properties: [
-			createGonkaGateModelSelectorProperty(),
-			createGonkaGateStreamingProperty(),
-			createGonkaGateChatModelOptionsProperty(),
-		],
+		properties: [...gonkaGateChatModelProperties],
 	};
 
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {

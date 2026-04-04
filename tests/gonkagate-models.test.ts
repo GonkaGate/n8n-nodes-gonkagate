@@ -15,6 +15,7 @@ import {
 	searchGonkaGateModels,
 } from '../shared/GonkaGate/modelDiscovery';
 import { resolveGonkaGateModelId } from '../shared/GonkaGate/modelId';
+import { GONKAGATE_CHAT_COMPLETION_OPERATION_NAME } from '../shared/GonkaGate/operationNames';
 import {
 	createLoadOptionsContext,
 	createModelResourceLocator,
@@ -221,7 +222,7 @@ test('serializeGonkaGateError keeps normalized request metadata for continueOnFa
 			},
 		},
 		2,
-		'Chat Completion',
+		GONKAGATE_CHAT_COMPLETION_OPERATION_NAME,
 	);
 
 	assert.deepEqual(serializeGonkaGateError(error), {
@@ -247,7 +248,7 @@ test('normalizeGonkaGateError preserves the recoverable upstream error contract'
 			},
 		},
 		0,
-		'Chat Completion',
+		GONKAGATE_CHAT_COMPLETION_OPERATION_NAME,
 	);
 
 	assert.equal(isRecoverableGonkaGateError(error), true);

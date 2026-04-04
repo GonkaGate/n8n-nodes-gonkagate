@@ -2,6 +2,7 @@ import type { IDisplayOptions, ILoadOptionsFunctions, INodeProperties } from 'n8
 
 import { GONKAGATE_MODEL_SEARCH_METHOD_NAME } from './identifiers';
 import { searchGonkaGateModels } from './modelDiscovery';
+import { GONKAGATE_MODEL_PARAMETER_NAME } from './parameters';
 
 export function createGonkaGateModelSearchMethods() {
 	return {
@@ -18,7 +19,7 @@ export function createGonkaGateModelSelectorProperty(
 ): INodeProperties {
 	return {
 		displayName: 'Model',
-		name: 'model',
+		name: GONKAGATE_MODEL_PARAMETER_NAME,
 		type: 'resourceLocator',
 		default: {
 			mode: 'list',
@@ -56,3 +57,12 @@ export function createGonkaGateModelSelectorProperty(
 		],
 	};
 }
+
+export function createGonkaGateModelSelectorFeatures(displayOptions?: IDisplayOptions) {
+	return {
+		methods: createGonkaGateModelSearchMethods(),
+		property: createGonkaGateModelSelectorProperty(displayOptions),
+	};
+}
+
+export const GONKAGATE_MODEL_SELECTOR_FEATURES = createGonkaGateModelSelectorFeatures();

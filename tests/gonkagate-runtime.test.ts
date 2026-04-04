@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { NodeOperationError } from 'n8n-workflow';
+
 import { GonkaGateApi } from '../credentials/GonkaGateApi.credentials';
 import { GonkaGate } from '../nodes/GonkaGate/GonkaGate.node';
 import { LmChatGonkaGate } from '../nodes/LmChatGonkaGate/LmChatGonkaGate.node';
@@ -11,43 +13,41 @@ import {
 	GONKAGATE_MODELS_PATH,
 } from '../shared/GonkaGate/constants';
 import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
+import {
+	GONKAGATE_MESSAGES_PARAMETER_NAME,
+	GONKAGATE_MODEL_PARAMETER_NAME,
+	GONKAGATE_OPERATION_PARAMETER_NAME,
+	GONKAGATE_OPTIONS_PARAMETER_NAME,
+	GONKAGATE_STREAMING_PARAMETER_NAME,
+} from '../shared/GonkaGate/parameters';
 import { createExecuteContext, createSupplyContext } from './helpers/gonkagateTestUtils';
 
-test('GonkaGate.execute composes shared request building with credential auth', async () => {
+test('GonkaGate.execute composes the shared request contract at the node boundary', async () => {
 	const requests: Array<{
-		baseURL?: string;
 		method?: string;
 		url?: string;
 		body?: unknown;
-		headers?: unknown;
+		json?: boolean;
 	}> = [];
 	const node = new GonkaGate();
-	const credential = new GonkaGateApi();
-	const credentials = {
-		apiKey: ' test-key ',
-		url: ' https://api.gonkagate.com/v1 ',
-	};
 
 	const result = await node.execute.call(
 		createExecuteContext({
 			parameters: [
 				{
-					operation: 'chatCompletion',
-					model: ' test-model ',
-					messages: '[{"role":"user","content":"Hello from n8n"}]',
+					[GONKAGATE_OPERATION_PARAMETER_NAME]: 'chatCompletion',
+					[GONKAGATE_MODEL_PARAMETER_NAME]: ' test-model ',
+					[GONKAGATE_MESSAGES_PARAMETER_NAME]: '[{"role":"user","content":"Hello from n8n"}]',
 				},
 			],
 			httpRequest: async (credentialType, requestOptions) => {
 				assert.equal(credentialType, GONKAGATE_CREDENTIAL_NAME);
 
-				const authenticatedRequest = await credential.authenticate(credentials, requestOptions);
-
 				requests.push({
-					baseURL: authenticatedRequest.baseURL,
-					method: authenticatedRequest.method,
-					url: authenticatedRequest.url,
-					body: authenticatedRequest.body,
-					headers: authenticatedRequest.headers,
+					method: requestOptions.method,
+					url: requestOptions.url,
+					body: requestOptions.body,
+					json: requestOptions.json,
 				});
 
 				return {
@@ -59,19 +59,14 @@ test('GonkaGate.execute composes shared request building with credential auth', 
 	);
 
 	assert.equal(requests.length, 1);
-	assert.equal(requests[0].baseURL, GONKAGATE_BASE_URL);
 	assert.equal(requests[0].method, 'POST');
 	assert.equal(requests[0].url, GONKAGATE_CHAT_COMPLETIONS_PATH);
+	assert.equal(requests[0].json, true);
 	assert.deepEqual(requests[0].body, {
 		model: 'test-model',
 		messages: [{ role: 'user', content: 'Hello from n8n' }],
 		stream: false,
 	});
-	assert.match(
-		String((requests[0].headers as Record<string, unknown>).Accept),
-		/application\/json/,
-	);
-	assert.equal((requests[0].headers as Record<string, unknown>).Authorization, 'Bearer test-key');
 	assert.deepEqual(result, [
 		[
 			{
@@ -91,9 +86,9 @@ test('GonkaGate.execute serializes recoverable upstream failures when continueOn
 			continueOnFail: true,
 			parameters: [
 				{
-					operation: 'chatCompletion',
-					model: 'test-model',
-					messages: '[{"role":"user","content":"Hello from n8n"}]',
+					[GONKAGATE_OPERATION_PARAMETER_NAME]: 'chatCompletion',
+					[GONKAGATE_MODEL_PARAMETER_NAME]: 'test-model',
+					[GONKAGATE_MESSAGES_PARAMETER_NAME]: '[{"role":"user","content":"Hello from n8n"}]',
 				},
 			],
 			httpRequest: async () => {
@@ -136,12 +131,12 @@ test('GonkaGate.execute normalizes raw pre-request failures at the node boundary
 			continueOnFail: true,
 			parameters: [
 				{
-					operation: 'chatCompletion',
-					model: 'test-model',
+					[GONKAGATE_OPERATION_PARAMETER_NAME]: 'chatCompletion',
+					[GONKAGATE_MODEL_PARAMETER_NAME]: 'test-model',
 				},
 			],
 			getNodeParameter(parameterName, itemIndex, fallbackValue) {
-				if (parameterName === 'messages') {
+				if (parameterName === GONKAGATE_MESSAGES_PARAMETER_NAME) {
 					throw {
 						code: 'ETIMEDOUT',
 						message: 'socket timed out',
@@ -155,11 +150,11 @@ test('GonkaGate.execute normalizes raw pre-request failures at the node boundary
 					return fallbackValue;
 				}
 
-				if (parameterName === 'operation') {
+				if (parameterName === GONKAGATE_OPERATION_PARAMETER_NAME) {
 					return 'chatCompletion';
 				}
 
-				if (parameterName === 'model') {
+				if (parameterName === GONKAGATE_MODEL_PARAMETER_NAME) {
 					return 'test-model';
 				}
 
@@ -211,6 +206,8 @@ test('GonkaGateApi.authenticate applies the shared credential authentication pol
 test('createGonkaGateChatModelSupplier forwards the GonkaGate AI-model contract to the SDK seam', async () => {
 	let suppliedContext: unknown;
 	let suppliedModel: unknown;
+	let requestedCredentialName: string | undefined;
+	let requestedItemIndex: number | undefined;
 
 	const supplyGonkaGateChatModel = createGonkaGateChatModelSupplier((context, model) => {
 		suppliedContext = context;
@@ -224,12 +221,21 @@ test('createGonkaGateChatModelSupplier forwards the GonkaGate AI-model contract 
 	const context = createSupplyContext({
 		credentials: {
 			apiKey: 'test-key',
-			url: 'https://api.gonkagate.com/v1',
+			url: GONKAGATE_BASE_URL,
+		},
+		async getCredentials(credentialName, itemIndex) {
+			requestedCredentialName = credentialName;
+			requestedItemIndex = itemIndex;
+
+			return {
+				apiKey: 'test-key',
+				url: GONKAGATE_BASE_URL,
+			};
 		},
 		parameters: {
-			model: 'test-model',
-			streaming: false,
-			options: {
+			[GONKAGATE_MODEL_PARAMETER_NAME]: 'test-model',
+			[GONKAGATE_STREAMING_PARAMETER_NAME]: false,
+			[GONKAGATE_OPTIONS_PARAMETER_NAME]: {
 				maxRetries: 3,
 				maxTokens: 128,
 				timeout: 1500,
@@ -240,6 +246,8 @@ test('createGonkaGateChatModelSupplier forwards the GonkaGate AI-model contract 
 	const result = await supplyGonkaGateChatModel(context, 0);
 
 	assert.equal(suppliedContext, context);
+	assert.equal(requestedCredentialName, GONKAGATE_CREDENTIAL_NAME);
+	assert.equal(requestedItemIndex, 0);
 	assert.deepEqual(suppliedModel, {
 		type: 'openai',
 		baseUrl: GONKAGATE_BASE_URL,
@@ -259,18 +267,56 @@ test('createGonkaGateChatModelSupplier forwards the GonkaGate AI-model contract 
 	});
 });
 
+test('createGonkaGateChatModelSupplier normalizes supply-time GonkaGate failures', async () => {
+	const supplyGonkaGateChatModel = createGonkaGateChatModelSupplier(() => {
+		throw {
+			code: 'ETIMEDOUT',
+			message: 'socket timed out',
+			response: {
+				headers: {
+					'x-request-id': 'req_ai_model',
+				},
+				data: {
+					message: 'socket timed out',
+				},
+			},
+		};
+	});
+
+	await assert.rejects(
+		supplyGonkaGateChatModel(
+			createSupplyContext({
+				credentials: {
+					apiKey: 'test-key',
+					url: GONKAGATE_BASE_URL,
+				},
+				parameters: {
+					[GONKAGATE_MODEL_PARAMETER_NAME]: 'test-model',
+					[GONKAGATE_STREAMING_PARAMETER_NAME]: false,
+					[GONKAGATE_OPTIONS_PARAMETER_NAME]: {},
+				},
+			}),
+			0,
+		),
+		(error) =>
+			error instanceof NodeOperationError &&
+			error.message === 'The GonkaGate request timed out' &&
+			error.description === 'socket timed out\nRequest ID: req_ai_model',
+	);
+});
+
 test('LmChatGonkaGate.supplyData returns an AI model response for the GonkaGate surface', async () => {
 	const node = new LmChatGonkaGate();
 	const result = await node.supplyData.call(
 		createSupplyContext({
 			credentials: {
 				apiKey: 'test-key',
-				url: 'https://api.gonkagate.com/v1',
+				url: GONKAGATE_BASE_URL,
 			},
 			parameters: {
-				model: 'test-model',
-				streaming: false,
-				options: {
+				[GONKAGATE_MODEL_PARAMETER_NAME]: 'test-model',
+				[GONKAGATE_STREAMING_PARAMETER_NAME]: false,
+				[GONKAGATE_OPTIONS_PARAMETER_NAME]: {
 					maxTokens: 128,
 				},
 			},
@@ -287,7 +333,7 @@ test('GonkaGate.execute routes listModels through the operation registry', async
 
 	const result = await node.execute.call(
 		createExecuteContext({
-			parameters: [{ operation: 'listModels' }],
+			parameters: [{ [GONKAGATE_OPERATION_PARAMETER_NAME]: 'listModels' }],
 			httpRequest: async (_credentialType, requestOptions) => {
 				requests.push({
 					method: requestOptions.method,

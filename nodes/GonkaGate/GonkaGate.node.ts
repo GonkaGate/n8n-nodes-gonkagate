@@ -8,7 +8,13 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { normalizeGonkaGateError, serializeGonkaGateError } from '../../shared/GonkaGate/errors';
 import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
-import { createGonkaGateModelSearchMethods } from '../../shared/GonkaGate/modelParameter';
+import {
+	GONKAGATE_NODE_DESCRIPTION,
+	GONKAGATE_NODE_DISPLAY_NAME,
+	GONKAGATE_NODE_ICON,
+} from '../../shared/GonkaGate/metadata';
+import { GONKAGATE_MODEL_SELECTOR_FEATURES } from '../../shared/GonkaGate/modelParameter';
+import { GONKAGATE_OPERATION_PARAMETER_NAME } from '../../shared/GonkaGate/parameters';
 import {
 	createGonkaGateOperationProperty,
 	executeGonkaGateOperation,
@@ -19,18 +25,18 @@ import {
 } from './operations';
 
 export class GonkaGate implements INodeType {
-	methods = createGonkaGateModelSearchMethods();
+	methods = GONKAGATE_MODEL_SELECTOR_FEATURES.methods;
 
 	description: INodeTypeDescription = {
-		displayName: 'GonkaGate',
+		displayName: GONKAGATE_NODE_DISPLAY_NAME,
 		name: 'gonkaGate',
-		icon: 'file:gonkagate.svg',
+		icon: GONKAGATE_NODE_ICON,
 		group: ['transform'],
 		version: [1],
-		subtitle: '={{$parameter["operation"]}}',
-		description: 'Use GonkaGate model discovery and chat completions in n8n workflows',
+		subtitle: `={{$parameter["${GONKAGATE_OPERATION_PARAMETER_NAME}"]}}`,
+		description: GONKAGATE_NODE_DESCRIPTION,
 		defaults: {
-			name: 'GonkaGate',
+			name: GONKAGATE_NODE_DISPLAY_NAME,
 		},
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
@@ -54,7 +60,7 @@ export class GonkaGate implements INodeType {
 
 			try {
 				const operation = this.getNodeParameter(
-					'operation',
+					GONKAGATE_OPERATION_PARAMETER_NAME,
 					itemIndex,
 					GONKAGATE_DEFAULT_OPERATION,
 				) as GonkaGateOperation;
