@@ -1,11 +1,11 @@
 import type { ICredentialDataDecryptedObject, IHttpRequestOptions, INode } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
 
 import {
 	GONKAGATE_BASE_URL_MIGRATION_MESSAGE,
 	LEGACY_GONKAGATE_BASE_URL_PLACEHOLDER,
 } from './constants';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
+import { toGonkaGateNodeOperationError } from './errors';
 import { createGonkaGateListModelsRequestOptions } from './modelsApi';
 import {
 	applyGonkaGateConnectionToRequest,
@@ -61,9 +61,7 @@ export function resolveRequiredGonkaGateApiKey(
 	try {
 		return resolveGonkaGateApiKey(rawApiKey);
 	} catch (error) {
-		throw new NodeOperationError(node, error as Error, {
-			itemIndex,
-		});
+		throw toGonkaGateNodeOperationError(node, error, itemIndex);
 	}
 }
 
@@ -79,9 +77,7 @@ export function resolveRequiredGonkaGateConnectionConfig(
 	try {
 		return resolveGonkaGateConnectionConfig(credentials);
 	} catch (error) {
-		throw new NodeOperationError(node, error as Error, {
-			itemIndex,
-		});
+		throw toGonkaGateNodeOperationError(node, error, itemIndex);
 	}
 }
 

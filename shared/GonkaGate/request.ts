@@ -1,6 +1,6 @@
 import type { IDataObject, INode } from 'n8n-workflow';
 
-import { normalizeGonkaGateError } from './errors';
+import { runWithNormalizedGonkaGateError } from './errors';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
 import { buildGonkaGateRequestOptions, type GonkaGateRequestOptions } from './transport';
 
@@ -28,17 +28,20 @@ export async function gonkaGateRequest<T extends IDataObject = IDataObject>(
 ): Promise<T> {
 	const { itemIndex = 0, parseResponse } = input;
 
-	try {
-		const response = await context.helpers.httpRequestWithAuthentication.call(
-			context,
-			GONKAGATE_CREDENTIAL_NAME,
-			buildGonkaGateRequestOptions(requestOptions),
-		);
+	return await runWithNormalizedGonkaGateError({
+		node: context.getNode(),
+		itemIndex,
+		operationName,
+		run: async () => {
+			const response = await context.helpers.httpRequestWithAuthentication.call(
+				context,
+				GONKAGATE_CREDENTIAL_NAME,
+				buildGonkaGateRequestOptions(requestOptions),
+			);
 
-		return parseResponse(response);
-	} catch (error) {
-		throw normalizeGonkaGateError(context.getNode(), error, itemIndex, operationName);
-	}
+			return parseResponse(response);
+		},
+	});
 }
 
 export function parseGonkaGateDataObjectResponse<T extends IDataObject = IDataObject>(

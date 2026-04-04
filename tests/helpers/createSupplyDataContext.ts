@@ -5,10 +5,10 @@ import { createStrictContext } from './createStrictContext';
 import { createTestNode } from './createTestNode';
 
 export type SupplyDataContextOptions = {
-	credentialData: Record<string, unknown>;
-	nodeParameters: Record<string, unknown>;
-	expectedCredentialItemIndex?: number;
-	expectedNodeParameterItemIndex?: number;
+	credentials: Record<string, unknown>;
+	parameters: Record<string, unknown>;
+	credentialItemIndex?: number;
+	parameterItemIndex?: number;
 	getCredentials?: (
 		credentialName: string,
 		itemIndex: number,
@@ -45,11 +45,11 @@ function resolveTestCredentials(
 		throw new Error(`Unexpected credential lookup: ${credentialName}`);
 	}
 
-	if (itemIndex !== (options.expectedCredentialItemIndex ?? 0)) {
+	if (itemIndex !== (options.credentialItemIndex ?? 0)) {
 		throw new Error(`Unexpected credential item index: ${itemIndex}`);
 	}
 
-	return options.credentialData;
+	return options.credentials;
 }
 
 function resolveTestNodeParameter(
@@ -58,9 +58,9 @@ function resolveTestNodeParameter(
 	itemIndex: number,
 	fallbackValue?: unknown,
 ) {
-	if (itemIndex !== (options.expectedNodeParameterItemIndex ?? 0)) {
+	if (itemIndex !== (options.parameterItemIndex ?? 0)) {
 		throw new Error(`Unexpected parameter item index: ${itemIndex}`);
 	}
 
-	return options.nodeParameters[parameterName] ?? fallbackValue;
+	return options.parameters[parameterName] ?? fallbackValue;
 }

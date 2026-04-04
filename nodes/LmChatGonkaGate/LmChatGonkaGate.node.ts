@@ -1,4 +1,5 @@
 import type {
+	INodeProperties,
 	INodeType,
 	INodeTypeDescription,
 	ISupplyDataFunctions,
@@ -6,18 +7,28 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import { gonkaGateChatModelProperties } from '../../shared/GonkaGate/chatModelParameters';
 import { supplyGonkaGateChatModel } from '../../shared/GonkaGate/chatModel';
+import { createGonkaGateStreamingProperty } from '../../shared/GonkaGate/chatModelParameters';
+import { createGonkaGateChatModelOptionsProperty } from '../../shared/GonkaGate/chatOptions';
 import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
-import { GONKAGATE_MODEL_SELECTOR_FEATURES } from '../../shared/GonkaGate/modelParameter';
+import {
+	GONKAGATE_MODEL_SELECTOR_METHODS,
+	GONKAGATE_MODEL_SELECTOR_PROPERTY,
+} from '../../shared/GonkaGate/modelParameter';
 import {
 	GONKAGATE_CHAT_MODEL_DESCRIPTION,
 	GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
 	GONKAGATE_NODE_ICON,
 } from '../../shared/GonkaGate/metadata';
 
+const gonkaGateChatModelNodeProperties: readonly INodeProperties[] = [
+	GONKAGATE_MODEL_SELECTOR_PROPERTY,
+	createGonkaGateStreamingProperty(),
+	createGonkaGateChatModelOptionsProperty(),
+] as const;
+
 export class LmChatGonkaGate implements INodeType {
-	methods = GONKAGATE_MODEL_SELECTOR_FEATURES.methods;
+	methods = GONKAGATE_MODEL_SELECTOR_METHODS;
 
 	description: INodeTypeDescription = {
 		displayName: GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
@@ -37,7 +48,7 @@ export class LmChatGonkaGate implements INodeType {
 				required: true,
 			},
 		],
-		properties: [...gonkaGateChatModelProperties],
+		properties: [...gonkaGateChatModelNodeProperties],
 	};
 
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {

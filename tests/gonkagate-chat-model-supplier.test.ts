@@ -3,15 +3,10 @@ import test from 'node:test';
 
 import { NodeOperationError } from 'n8n-workflow';
 
-import { LmChatGonkaGate } from '../nodes/LmChatGonkaGate/LmChatGonkaGate.node';
 import { createGonkaGateChatModelSupplier } from '../shared/GonkaGate/chatModel';
 import { GONKAGATE_BASE_URL } from '../shared/GonkaGate/constants';
 import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
-import {
-	GONKAGATE_MODEL_PARAMETER_NAME,
-	GONKAGATE_OPTIONS_PARAMETER_NAME,
-	GONKAGATE_STREAMING_PARAMETER_NAME,
-} from '../shared/GonkaGate/parameters';
+import { createChatModelNodeParameters } from './helpers/createGonkaGateChatModelParameters';
 import { createSupplyDataContext } from './helpers/createSupplyDataContext';
 
 test('createGonkaGateChatModelSupplier forwards the GonkaGate chat-model contract to the SDK seam', async () => {
@@ -30,10 +25,12 @@ test('createGonkaGateChatModelSupplier forwards the GonkaGate chat-model contrac
 	});
 
 	const context = createSupplyDataContext({
-		credentialData: {
+		credentials: {
 			apiKey: 'test-key',
 			baseUrl: GONKAGATE_BASE_URL,
 		},
+		credentialItemIndex: 0,
+		parameterItemIndex: 0,
 		getCredentials(credentialName, itemIndex) {
 			requestedCredentialName = credentialName;
 			requestedItemIndex = itemIndex;
@@ -43,8 +40,8 @@ test('createGonkaGateChatModelSupplier forwards the GonkaGate chat-model contrac
 				baseUrl: GONKAGATE_BASE_URL,
 			};
 		},
-		nodeParameters: createChatModelNodeParameters({
-			[GONKAGATE_OPTIONS_PARAMETER_NAME]: {
+		parameters: createChatModelNodeParameters({
+			options: {
 				maxRetries: 3,
 				maxTokens: 128,
 				timeout: 1500,
@@ -95,11 +92,13 @@ test('createGonkaGateChatModelSupplier normalizes supply-time GonkaGate failures
 	await assert.rejects(
 		supplyGonkaGateChatModel(
 			createSupplyDataContext({
-				credentialData: {
+				credentials: {
 					apiKey: 'test-key',
 					baseUrl: GONKAGATE_BASE_URL,
 				},
-				nodeParameters: createChatModelNodeParameters(),
+				credentialItemIndex: 0,
+				parameterItemIndex: 0,
+				parameters: createChatModelNodeParameters(),
 			}),
 			0,
 		),
@@ -109,34 +108,3 @@ test('createGonkaGateChatModelSupplier normalizes supply-time GonkaGate failures
 			error.description === 'socket timed out\nRequest ID: req_chat_model',
 	);
 });
-
-test('LmChatGonkaGate.supplyData returns a chat-model response for the GonkaGate surface', async () => {
-	const node = new LmChatGonkaGate();
-	const result = await node.supplyData.call(
-		createSupplyDataContext({
-			credentialData: {
-				apiKey: 'test-key',
-				baseUrl: GONKAGATE_BASE_URL,
-			},
-			nodeParameters: createChatModelNodeParameters({
-				[GONKAGATE_OPTIONS_PARAMETER_NAME]: {
-					maxTokens: 128,
-				},
-			}),
-		}),
-		0,
-	);
-
-	assert.ok(result.response);
-});
-
-function createChatModelNodeParameters(
-	overrides: Record<string, unknown> = {},
-): Record<string, unknown> {
-	return {
-		[GONKAGATE_MODEL_PARAMETER_NAME]: 'test-model',
-		[GONKAGATE_STREAMING_PARAMETER_NAME]: false,
-		[GONKAGATE_OPTIONS_PARAMETER_NAME]: {},
-		...overrides,
-	};
-}

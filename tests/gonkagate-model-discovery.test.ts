@@ -68,7 +68,7 @@ test('resolveGonkaGateModelId accepts manual strings and resource locator values
 });
 
 test('searchGonkaGateModels falls back to an empty list for recoverable upstream failures', async () => {
-	const results = await searchGonkaGateModelsWithCredentials(async () => {
+	const results = await searchGonkaGateModelsWithContext(async () => {
 		throw {
 			response: {
 				status: 503,
@@ -84,7 +84,7 @@ test('searchGonkaGateModels falls back to an empty list for recoverable upstream
 
 test('searchGonkaGateModels surfaces credential failures instead of hiding them', async () => {
 	await assert.rejects(
-		searchGonkaGateModelsWithCredentials(async () => {
+		searchGonkaGateModelsWithContext(async () => {
 			throw {
 				response: {
 					status: 401,
@@ -102,7 +102,7 @@ test('searchGonkaGateModels surfaces credential failures instead of hiding them'
 
 test('searchGonkaGateModels surfaces malformed models payloads instead of hiding them', async () => {
 	await assert.rejects(
-		searchGonkaGateModelsWithCredentials(async () => ({
+		searchGonkaGateModelsWithContext(async () => ({
 			data: {
 				id: 'not-an-array',
 			},
@@ -113,7 +113,7 @@ test('searchGonkaGateModels surfaces malformed models payloads instead of hiding
 
 test('searchGonkaGateModels rethrows unexpected internal errors', async () => {
 	await assert.rejects(
-		searchGonkaGateModelsWithCredentials(async () => {
+		searchGonkaGateModelsWithContext(async () => {
 			const response = {};
 			Object.defineProperty(response, 'data', {
 				get() {
@@ -129,7 +129,7 @@ test('searchGonkaGateModels rethrows unexpected internal errors', async () => {
 
 test('searchGonkaGateModels rethrows normalized internal node errors', async () => {
 	await assert.rejects(
-		searchGonkaGateModelsWithCredentials(async () => {
+		searchGonkaGateModelsWithContext(async () => {
 			throw new NodeOperationError(createTestNode(), 'internal parse failure');
 		}),
 		/internal parse failure/,
@@ -137,7 +137,7 @@ test('searchGonkaGateModels rethrows normalized internal node errors', async () 
 });
 
 test('searchGonkaGateModels suppresses pre-normalized recoverable API errors', async () => {
-	const results = await searchGonkaGateModelsWithCredentials(async () => {
+	const results = await searchGonkaGateModelsWithContext(async () => {
 		throw new NodeApiError(createTestNode(), {
 			status: 503,
 			data: {
@@ -149,13 +149,13 @@ test('searchGonkaGateModels suppresses pre-normalized recoverable API errors', a
 	assert.deepEqual(results, { results: [] });
 });
 
-async function searchGonkaGateModelsWithCredentials(
-	authenticatedHttpRequest: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'],
+async function searchGonkaGateModelsWithContext(
+	httpRequestWithAuthentication: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'],
 ) {
 	return await searchGonkaGateModels.call(
 		createLoadOptionsContext({
-			credentialsAttached: true,
-			authenticatedHttpRequest,
+			hasCredentials: true,
+			httpRequestWithAuthentication,
 		}),
 		'',
 	);

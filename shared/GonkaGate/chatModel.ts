@@ -5,7 +5,7 @@ import type { ISupplyDataFunctions, SupplyData } from 'n8n-workflow';
 import { resolveGonkaGateChatModelParametersFromContext } from './chatModelParameters';
 import type { ResolvedGonkaGateChatParameters } from './chatParameters';
 import { resolveRequiredGonkaGateConnectionConfig } from './credentials';
-import { normalizeGonkaGateError } from './errors';
+import { runWithNormalizedGonkaGateError } from './errors';
 import { GONKAGATE_CREDENTIAL_NAME } from './identifiers';
 import { GONKAGATE_CHAT_MODEL_DISPLAY_NAME } from './metadata';
 import { createGonkaGateAiModelConnection } from './transport';
@@ -42,27 +42,25 @@ export function createGonkaGateChatModelSupplier(
 		context: ISupplyDataFunctions,
 		itemIndex: number,
 	): Promise<SupplyData> {
-		try {
-			const credentials = await context.getCredentials(GONKAGATE_CREDENTIAL_NAME, itemIndex);
-			const chatParameters = resolveGonkaGateChatModelParametersFromContext(context, itemIndex);
+		return await runWithNormalizedGonkaGateError({
+			node: context.getNode(),
+			itemIndex,
+			operationName: GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
+			run: async () => {
+				const credentials = await context.getCredentials(GONKAGATE_CREDENTIAL_NAME, itemIndex);
+				const chatParameters = resolveGonkaGateChatModelParametersFromContext(context, itemIndex);
 
-			return await supplyModelDependency(
-				context,
-				buildGonkaGateChatModelSupplyOptions({
+				return await supplyModelDependency(
 					context,
-					credentials,
-					chatParameters,
-					itemIndex,
-				}),
-			);
-		} catch (error) {
-			throw normalizeGonkaGateError(
-				context.getNode(),
-				error,
-				itemIndex,
-				GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
-			);
-		}
+					buildGonkaGateChatModelSupplyOptions({
+						context,
+						credentials,
+						chatParameters,
+						itemIndex,
+					}),
+				);
+			},
+		});
 	};
 }
 

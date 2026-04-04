@@ -1,9 +1,5 @@
-import type {
-	IExecuteFunctions,
-	INodeExecutionData,
-	INodeProperties,
-	INodeType,
-} from 'n8n-workflow';
+import type { IExecuteFunctions, INode, INodeExecutionData, INodeProperties } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 import {
 	GONKAGATE_CHAT_COMPLETION_OPERATION_NAME,
@@ -26,8 +22,6 @@ import {
 	type GonkaGateOperation,
 } from './operationTypes';
 
-export type GonkaGateNodeMethods = NonNullable<INodeType['methods']>;
-
 export type GonkaGateOperationDefinition = {
 	operation: GonkaGateOperation;
 	displayName: string;
@@ -35,7 +29,6 @@ export type GonkaGateOperationDefinition = {
 	description: string;
 	properties: readonly INodeProperties[];
 	execute: (context: IExecuteFunctions, itemIndex: number) => Promise<INodeExecutionData[]>;
-	methods?: GonkaGateNodeMethods;
 };
 
 const gonkaGateOperationDefinitions = [
@@ -62,9 +55,36 @@ export function getGonkaGateOperationDefinitions(): readonly GonkaGateOperationD
 }
 
 export function getGonkaGateOperationDefinition(
-	operation: GonkaGateOperation,
+	operation: string,
 ): GonkaGateOperationDefinition | undefined {
 	return gonkaGateOperationDefinitions.find(
 		(operationDefinition) => operationDefinition.operation === operation,
 	);
+}
+
+export function resolveGonkaGateOperationDisplayName(operation: unknown): string | undefined {
+	if (typeof operation !== 'string') {
+		return undefined;
+	}
+
+	return getGonkaGateOperationDefinition(operation)?.displayName;
+}
+
+export function requireGonkaGateOperationDefinition(
+	node: INode,
+	rawOperation: unknown,
+	itemIndex: number,
+): GonkaGateOperationDefinition {
+	if (typeof rawOperation === 'string') {
+		const operationDefinition = getGonkaGateOperationDefinition(rawOperation);
+
+		if (operationDefinition !== undefined) {
+			return operationDefinition;
+		}
+	}
+
+	throw new NodeOperationError(node, 'Unsupported GonkaGate operation', {
+		itemIndex,
+		description: 'Select one of the supported GonkaGate operations.',
+	});
 }

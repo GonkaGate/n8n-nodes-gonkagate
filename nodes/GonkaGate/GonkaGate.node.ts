@@ -13,33 +13,27 @@ import {
 	GONKAGATE_NODE_DISPLAY_NAME,
 	GONKAGATE_NODE_ICON,
 } from '../../shared/GonkaGate/metadata';
-import { GONKAGATE_MODEL_SELECTOR_FEATURES } from '../../shared/GonkaGate/modelParameter';
+import { GONKAGATE_MODEL_SELECTOR_METHODS } from '../../shared/GonkaGate/modelParameter';
 import { GONKAGATE_OPERATION_PARAMETER_NAME } from '../../shared/GonkaGate/parameters';
 import {
 	createGonkaGateOperationProperty,
 	getGonkaGateOperationProperties,
 } from './operationProperties';
-import { getGonkaGateOperationMethods } from './operationMethods';
 import {
-	executeGonkaGateOperationDefinition,
-	resolveGonkaGateOperationDefinition,
-} from './operationRuntime';
+	requireGonkaGateOperationDefinition,
+	resolveGonkaGateOperationDisplayName,
+} from './operationDefinitions';
 import { GONKAGATE_DEFAULT_OPERATION } from './operationTypes';
 
 const GONKAGATE_UNKNOWN_OPERATION_NAME = 'Operation';
 
-const gonkaGateNodeMethods = {
-	...GONKAGATE_MODEL_SELECTOR_FEATURES.methods,
-	...(getGonkaGateOperationMethods() ?? {}),
-};
-
-const gonkaGateNodeProperties = [
+const gonkaGateRootNodeProperties = [
 	createGonkaGateOperationProperty(),
 	...getGonkaGateOperationProperties(),
 ];
 
 export class GonkaGate implements INodeType {
-	methods = gonkaGateNodeMethods;
+	methods = GONKAGATE_MODEL_SELECTOR_METHODS;
 
 	description: INodeTypeDescription = {
 		displayName: GONKAGATE_NODE_DISPLAY_NAME,
@@ -61,7 +55,7 @@ export class GonkaGate implements INodeType {
 				required: true,
 			},
 		],
-		properties: gonkaGateNodeProperties,
+		properties: gonkaGateRootNodeProperties,
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -70,14 +64,15 @@ export class GonkaGate implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 
 		for (let itemIndex = 0; itemIndex < itemCount; itemIndex++) {
-			let operationDisplayName = GONKAGATE_UNKNOWN_OPERATION_NAME;
 			const defaultPairedItem = resolveDefaultPairedItem(inputItems, itemIndex);
+			const operationDisplayName = resolveOperationDisplayNameForItem(this, itemIndex);
 
 			try {
-				const executedOperation = await executeGonkaGateOperationForItem(this, itemIndex);
-				operationDisplayName = executedOperation.operationDisplayName;
-
-				appendOperationOutput(returnData, executedOperation.outputData, defaultPairedItem);
+				appendOperationOutput(
+					returnData,
+					await resolveOperationDefinitionForItem(this, itemIndex).execute(this, itemIndex),
+					defaultPairedItem,
+				);
 			} catch (error) {
 				const normalizedError = normalizeGonkaGateError(
 					this.getNode(),
@@ -102,25 +97,30 @@ export class GonkaGate implements INodeType {
 	}
 }
 
-async function executeGonkaGateOperationForItem(
-	context: IExecuteFunctions,
-	itemIndex: number,
-): Promise<{ operationDisplayName: string; outputData: INodeExecutionData[] }> {
-	const rawOperation = context.getNodeParameter(
-		GONKAGATE_OPERATION_PARAMETER_NAME,
-		itemIndex,
-		GONKAGATE_DEFAULT_OPERATION,
-	);
-	const operationDefinition = resolveGonkaGateOperationDefinition(
+function resolveOperationDefinitionForItem(context: IExecuteFunctions, itemIndex: number) {
+	return requireGonkaGateOperationDefinition(
 		context.getNode(),
-		rawOperation,
+		context.getNodeParameter(
+			GONKAGATE_OPERATION_PARAMETER_NAME,
+			itemIndex,
+			GONKAGATE_DEFAULT_OPERATION,
+		),
 		itemIndex,
 	);
+}
 
-	return {
-		operationDisplayName: operationDefinition.displayName,
-		outputData: await executeGonkaGateOperationDefinition(context, operationDefinition, itemIndex),
-	};
+function resolveOperationDisplayNameForItem(context: IExecuteFunctions, itemIndex: number): string {
+	try {
+		const rawOperation = context.getNodeParameter(
+			GONKAGATE_OPERATION_PARAMETER_NAME,
+			itemIndex,
+			GONKAGATE_DEFAULT_OPERATION,
+		);
+
+		return resolveGonkaGateOperationDisplayName(rawOperation) ?? GONKAGATE_UNKNOWN_OPERATION_NAME;
+	} catch {
+		return GONKAGATE_UNKNOWN_OPERATION_NAME;
+	}
 }
 
 function appendOperationOutput(

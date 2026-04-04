@@ -1,20 +1,12 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { createGonkaGateChatModelOptionsProperty } from './chatOptions';
 import {
 	resolveGonkaGateBaseChatParametersFromContext,
 	resolveGonkaGateChatParameters,
 	type GonkaGateNodeParameterContext,
 	type ResolvedGonkaGateChatParameters,
 } from './chatParameters';
-import { GONKAGATE_MODEL_SELECTOR_FEATURES } from './modelParameter';
 import { GONKAGATE_STREAMING_PARAMETER_NAME } from './parameters';
-
-export const gonkaGateChatModelProperties: readonly INodeProperties[] = [
-	GONKAGATE_MODEL_SELECTOR_FEATURES.property,
-	createGonkaGateStreamingProperty(),
-	createGonkaGateChatModelOptionsProperty(),
-] as const;
 
 export function createGonkaGateStreamingProperty(): INodeProperties {
 	return {

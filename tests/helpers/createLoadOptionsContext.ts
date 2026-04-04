@@ -5,8 +5,8 @@ import { createStrictContext } from './createStrictContext';
 import { createTestNode } from './createTestNode';
 
 export type LoadOptionsContextOptions = {
-	credentialsAttached: boolean;
-	authenticatedHttpRequest: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
+	hasCredentials: boolean;
+	httpRequestWithAuthentication: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
 };
 
 export function createLoadOptionsContext(
@@ -15,20 +15,20 @@ export function createLoadOptionsContext(
 	return createStrictContext(
 		{
 			getNode() {
-				return createLoadOptionsTestNode(options.credentialsAttached);
+				return createLoadOptionsTestNode(options.hasCredentials);
 			},
 			helpers: {
-				httpRequestWithAuthentication: options.authenticatedHttpRequest,
+				httpRequestWithAuthentication: options.httpRequestWithAuthentication,
 			},
 		},
 		'ILoadOptionsFunctions',
 	) as unknown as ILoadOptionsFunctions;
 }
 
-function createLoadOptionsTestNode(credentialsAttached: boolean) {
+function createLoadOptionsTestNode(hasCredentials: boolean) {
 	return {
 		...createTestNode(),
-		credentials: credentialsAttached ? createGonkaGateCredentialReference() : undefined,
+		credentials: hasCredentials ? createGonkaGateCredentialReference() : undefined,
 	};
 }
 

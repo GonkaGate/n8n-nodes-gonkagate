@@ -58,11 +58,6 @@ export function createGonkaGateModelSelectorProperty(
 	};
 }
 
-export function createGonkaGateModelSelectorFeatures(displayOptions?: IDisplayOptions) {
-	return {
-		methods: createGonkaGateModelSearchMethods(),
-		property: createGonkaGateModelSelectorProperty(displayOptions),
-	};
-}
+export const GONKAGATE_MODEL_SELECTOR_METHODS = createGonkaGateModelSearchMethods();
 
-export const GONKAGATE_MODEL_SELECTOR_FEATURES = createGonkaGateModelSelectorFeatures();
+export const GONKAGATE_MODEL_SELECTOR_PROPERTY = createGonkaGateModelSelectorProperty();

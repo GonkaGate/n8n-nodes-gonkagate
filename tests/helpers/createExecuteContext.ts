@@ -5,7 +5,7 @@ import { createTestNode } from './createTestNode';
 
 export type ExecuteContextOptions = {
 	itemParameters: Array<Record<string, unknown>>;
-	authenticatedHttpRequest: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
+	httpRequestWithAuthentication: ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
 	continueOnFail?: boolean;
 	inputItems?: INodeExecutionData[];
 	getNodeParameter?: (parameterName: string, itemIndex: number, fallbackValue?: unknown) => unknown;
@@ -33,7 +33,7 @@ export function createExecuteContext(options: ExecuteContextOptions): IExecuteFu
 				return options.continueOnFail ?? false;
 			},
 			helpers: {
-				httpRequestWithAuthentication: options.authenticatedHttpRequest,
+				httpRequestWithAuthentication: options.httpRequestWithAuthentication,
 			},
 		},
 		'IExecuteFunctions',

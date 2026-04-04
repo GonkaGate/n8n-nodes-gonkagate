@@ -91,6 +91,33 @@ export function normalizeGonkaGateError(
 	);
 }
 
+export async function runWithNormalizedGonkaGateError<T>(input: {
+	node: INode;
+	itemIndex: number;
+	operationName: string;
+	run(): Promise<T>;
+}): Promise<T> {
+	try {
+		return await input.run();
+	} catch (error) {
+		throw normalizeGonkaGateError(input.node, error, input.itemIndex, input.operationName);
+	}
+}
+
+export function toGonkaGateNodeOperationError(
+	node: INode,
+	error: unknown,
+	itemIndex: number,
+): NodeOperationError {
+	if (error instanceof NodeOperationError) {
+		return error;
+	}
+
+	return new NodeOperationError(node, error as Error, {
+		itemIndex,
+	});
+}
+
 export function serializeGonkaGateError(error: unknown): IDataObject {
 	if (error instanceof NodeApiError || error instanceof NodeOperationError) {
 		return serializeKnownGonkaGateError(error);

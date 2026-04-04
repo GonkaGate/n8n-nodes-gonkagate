@@ -1,19 +1,13 @@
-import type { IDataObject, INode, INodeProperties } from 'n8n-workflow';
+import type { IDataObject, INode } from 'n8n-workflow';
 
-import { parseGonkaGateChatMessages, createGonkaGateChatMessagesProperty } from './chatMessages';
+import { parseGonkaGateChatMessages } from './chatMessages';
 import {
 	resolveGonkaGateBaseChatParametersFromContext,
 	resolveGonkaGateChatParameters,
 	type GonkaGateNodeParameterContext,
 	type ResolvedGonkaGateChatParameters,
 } from './chatParameters';
-import { GONKAGATE_MODEL_SELECTOR_FEATURES } from './modelParameter';
 import { GONKAGATE_MESSAGES_PARAMETER_NAME } from './parameters';
-
-export const gonkaGateChatCompletionProperties: readonly INodeProperties[] = [
-	GONKAGATE_MODEL_SELECTOR_FEATURES.property,
-	createGonkaGateChatMessagesProperty(),
-] as const;
 
 export function buildGonkaGateChatCompletionRequestBody(input: {
 	node: INode;

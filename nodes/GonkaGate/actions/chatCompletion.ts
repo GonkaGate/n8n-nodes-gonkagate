@@ -1,7 +1,9 @@
-import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, INodeProperties } from 'n8n-workflow';
 
 import { buildGonkaGateChatCompletionRequestBodyFromContext } from '../../../shared/GonkaGate/chatCompletionParameters';
+import { createGonkaGateChatMessagesProperty } from '../../../shared/GonkaGate/chatMessages';
 import { GONKAGATE_CHAT_COMPLETIONS_PATH } from '../../../shared/GonkaGate/constants';
+import { GONKAGATE_MODEL_SELECTOR_PROPERTY } from '../../../shared/GonkaGate/modelParameter';
 import { GONKAGATE_CHAT_COMPLETION_OPERATION_NAME } from '../../../shared/GonkaGate/operationNames';
 import {
 	gonkaGateRequest,
@@ -13,7 +15,10 @@ export const GONKAGATE_CHAT_COMPLETION_OPERATION_ACTION = 'Create a chat complet
 export const GONKAGATE_CHAT_COMPLETION_OPERATION_DESCRIPTION =
 	'Send a non-streaming chat completion request to GonkaGate';
 
-export { gonkaGateChatCompletionProperties } from '../../../shared/GonkaGate/chatCompletionParameters';
+export const gonkaGateChatCompletionProperties: readonly INodeProperties[] = [
+	GONKAGATE_MODEL_SELECTOR_PROPERTY,
+	createGonkaGateChatMessagesProperty(),
+] as const;
 
 export async function executeChatCompletion(
 	context: IExecuteFunctions,
