@@ -7,7 +7,7 @@ import type {
 	ISupplyDataFunctions,
 } from 'n8n-workflow';
 
-import { GONKAGATE_CREDENTIAL_NAME } from '../../nodes/shared/GonkaGate';
+import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
 
 export function createNode(): INode {
 	return {

@@ -5,14 +5,12 @@ import { GonkaGateApi } from '../credentials/GonkaGateApi.credentials';
 import { GonkaGate } from '../nodes/GonkaGate/GonkaGate.node';
 import { LmChatGonkaGate } from '../nodes/LmChatGonkaGate/LmChatGonkaGate.node';
 import {
-	buildGonkaGateChatModelSupplyOptions,
 	GONKAGATE_BASE_URL,
 	GONKAGATE_CHAT_COMPLETIONS_PATH,
 	GONKAGATE_MODELS_PATH,
-} from '../nodes/shared/GonkaGate';
+} from '../shared/GonkaGate/constants';
 import {
 	createExecuteContext,
-	createNode,
 	createSupplyContext,
 } from './helpers/gonkagateTestUtils';
 
@@ -135,38 +133,7 @@ test('GonkaGateApi.authenticate applies the shared credential authentication pol
 	});
 });
 
-test('buildGonkaGateChatModelSupplyOptions reuses the shared credential resolution seam', () => {
-	const options = buildGonkaGateChatModelSupplyOptions({
-		context: {
-			getNode: createNode,
-		},
-		credentials: {
-			apiKey: ' test-key ',
-			url: ' https://api.gonkagate.com/v1 ',
-		},
-		model: ' manual-model ',
-		streaming: true,
-		options: {
-			temperature: 0.2,
-		},
-		itemIndex: 0,
-	});
-
-	assert.deepEqual(options, {
-		type: 'openai',
-		baseUrl: GONKAGATE_BASE_URL,
-		apiKey: 'test-key',
-		defaultHeaders: {
-			Accept: 'application/json',
-		},
-		model: 'manual-model',
-		useResponsesApi: false,
-		streaming: true,
-		temperature: 0.2,
-	});
-});
-
-test('LmChatGonkaGate.supplyData keeps the AI-node wiring local and executable', async () => {
+test('LmChatGonkaGate.supplyData preserves the GonkaGate chat-model contract', async () => {
 	const node = new LmChatGonkaGate();
 	const result = await node.supplyData.call(
 		createSupplyContext({
@@ -186,11 +153,38 @@ test('LmChatGonkaGate.supplyData keeps the AI-node wiring local and executable',
 	);
 
 	assert.ok(result.response);
+	const response = result.response as {
+		fields?: {
+			model?: unknown;
+			apiKey?: unknown;
+			useResponsesApi?: unknown;
+			streaming?: unknown;
+			maxTokens?: unknown;
+			configuration?: {
+				baseURL?: unknown;
+				defaultHeaders?: unknown;
+			};
+		};
+	};
+	assert.equal(response.fields?.model, 'test-model');
+	assert.equal(response.fields?.apiKey, 'test-key');
+	assert.equal(response.fields?.useResponsesApi, false);
+	assert.equal(response.fields?.streaming, false);
+	assert.equal(response.fields?.maxTokens, 128);
+	assert.equal(response.fields?.configuration?.baseURL, GONKAGATE_BASE_URL);
+	assert.deepEqual(response.fields?.configuration?.defaultHeaders, {
+		Accept: 'application/json',
+	});
 });
 
-test('GonkaGateApi test request reuses the normalized runtime request path', () => {
+test('GonkaGateApi test request reuses the normalized runtime transport defaults', () => {
 	const credential = new GonkaGateApi();
 
 	assert.equal(credential.test.request.baseURL, undefined);
+	assert.equal(credential.test.request.method, 'GET');
 	assert.equal(credential.test.request.url, GONKAGATE_MODELS_PATH);
+	assert.equal(credential.test.request.json, true);
+	assert.deepEqual(credential.test.request.headers, {
+		Accept: 'application/json',
+	});
 });

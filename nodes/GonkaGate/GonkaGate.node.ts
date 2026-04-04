@@ -6,8 +6,9 @@ import type {
 } from 'n8n-workflow';
 import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-import { serializeGonkaGateError } from '../shared/GonkaGate/errors';
-import { createGonkaGateModelSearchMethods, GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate';
+import { serializeGonkaGateError } from '../../shared/GonkaGate/errors';
+import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
+import { createGonkaGateModelSearchMethods } from '../../shared/GonkaGate/modelParameter';
 import {
 	createGonkaGateOperationProperty,
 	executeGonkaGateOperation,

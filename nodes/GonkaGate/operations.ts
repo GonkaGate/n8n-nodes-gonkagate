@@ -1,5 +1,4 @@
 import type {
-	IDataObject,
 	IDisplayOptions,
 	IExecuteFunctions,
 	INodeExecutionData,
@@ -72,10 +71,6 @@ export async function executeGonkaGateOperation(
 	itemIndex: number,
 ): Promise<INodeExecutionData[]> {
 	return await GONKAGATE_OPERATION_DEFINITIONS[operation].execute(context, itemIndex);
-}
-
-export function createGonkaGateJsonOutput(json: IDataObject): INodeExecutionData[] {
-	return [{ json }];
 }
 
 function withOperationDisplayOptions(

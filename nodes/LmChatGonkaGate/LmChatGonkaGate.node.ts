@@ -6,15 +6,13 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import {
-	createGonkaGateChatModelOptionsProperty,
-	GONKAGATE_CREDENTIAL_NAME,
-	supplyGonkaGateChatModel,
-} from '../shared/GonkaGate';
+import { createGonkaGateChatModelOptionsProperty } from '../../shared/GonkaGate/chatParameters';
+import { supplyGonkaGateChatModel } from '../../shared/GonkaGate/chatModel';
+import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
 import {
 	createGonkaGateModelSearchMethods,
 	createGonkaGateModelSelectorProperty,
-} from '../shared/GonkaGate';
+} from '../../shared/GonkaGate/modelParameter';
 
 export class LmChatGonkaGate implements INodeType {
 	methods = createGonkaGateModelSearchMethods();

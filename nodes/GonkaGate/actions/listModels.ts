@@ -1,8 +1,8 @@
 import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 
-import { createListModelsRequestOptions } from '../../shared/GonkaGate/modelsApi';
-import { gonkaGateRequest } from '../../shared/GonkaGate/request';
-import { createGonkaGateJsonOutput } from '../operations';
+import { createListModelsRequestOptions } from '../../../shared/GonkaGate/modelsApi';
+import { gonkaGateRequest } from '../../../shared/GonkaGate/request';
+import { createGonkaGateJsonOutput } from '../output';
 
 export async function executeListModels(
 	context: IExecuteFunctions,

@@ -2,17 +2,15 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
+import { buildGonkaGateChatCompletionRequestBody } from '../shared/GonkaGate/chatParameters';
+import { resolveGonkaGateBaseUrl } from '../shared/GonkaGate/credentials';
+import { normalizeGonkaGateError, serializeGonkaGateError } from '../shared/GonkaGate/errors';
 import {
-	buildGonkaGateChatModelOptions,
-	createGonkaGateChatModelOptionsProperty,
-	normalizeGonkaGateError,
-	parseGonkaGateModelsResponse,
-	resolveGonkaGateBaseUrl,
-	resolveGonkaGateModelId,
-	searchGonkaGateModels,
-	serializeGonkaGateError,
 	buildGonkaGateModelSearchResults,
-} from '../nodes/shared/GonkaGate';
+	parseGonkaGateModelsResponse,
+	searchGonkaGateModels,
+} from '../shared/GonkaGate/modelDiscovery';
+import { resolveGonkaGateModelId } from '../shared/GonkaGate/modelId';
 import {
 	createLoadOptionsContext,
 	createModelResourceLocator,
@@ -81,21 +79,28 @@ test('resolveGonkaGateBaseUrl rejects the legacy placeholder', () => {
 	);
 });
 
-test('buildGonkaGateChatModelOptions stays in sync with the AI node options property', () => {
-	const property = createGonkaGateChatModelOptionsProperty();
-	const options = buildGonkaGateChatModelOptions({
-		frequencyPenalty: 0.1,
-		maxRetries: 1,
-		maxTokens: 256,
-		presencePenalty: 0.2,
-		temperature: 0.3,
-		timeout: 1000,
-		topP: 0.4,
+test('buildGonkaGateChatCompletionRequestBody normalizes chat payloads', () => {
+	const requestBody = buildGonkaGateChatCompletionRequestBody({
+		node: createNode(),
+		rawModel: ' manual-model ',
+		rawMessages: '[{"role":"user","content":"Hello from n8n"}]',
+		rawStreaming: false,
+		rawOptions: {
+			maxTokens: 256,
+			temperature: 0.3,
+		},
+		itemIndex: 0,
 	});
 
 	assert.deepEqual(
-		Object.keys(options).sort(),
-		(property.options ?? []).map((option) => option.name).sort(),
+		requestBody,
+		{
+			model: 'manual-model',
+			messages: [{ role: 'user', content: 'Hello from n8n' }],
+			stream: false,
+			maxTokens: 256,
+			temperature: 0.3,
+		},
 	);
 });
 

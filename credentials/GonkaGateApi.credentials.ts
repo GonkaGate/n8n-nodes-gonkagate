@@ -7,12 +7,10 @@ import type {
 	Icon,
 } from 'n8n-workflow';
 
-import {
-	authenticateGonkaGateRequest,
-	createListModelsRequestOptions,
-	GONKAGATE_BASE_URL,
-	GONKAGATE_CREDENTIAL_NAME,
-} from '../nodes/shared/GonkaGate';
+import { GONKAGATE_BASE_URL } from '../shared/GonkaGate/constants';
+import { authenticateGonkaGateRequest } from '../shared/GonkaGate/credentials';
+import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
+import { createListModelsRequestOptions } from '../shared/GonkaGate/modelsApi';
 
 export class GonkaGateApi implements ICredentialType {
 	name = GONKAGATE_CREDENTIAL_NAME;
