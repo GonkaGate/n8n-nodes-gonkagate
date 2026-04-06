@@ -5,10 +5,7 @@ import {
 	type GonkaGateModelsResponse,
 } from './modelCatalog';
 import { GONKAGATE_LIST_MODELS_OPERATION_NAME } from './operationNames';
-import {
-	createGonkaGateEndpointRequester,
-	parseGonkaGateDataObjectResponse,
-} from './request';
+import { createGonkaGateEndpointRequester, parseGonkaGateDataObjectResponse } from './request';
 import type { GonkaGateRequestOptions } from './transport';
 
 export function createGonkaGateListModelsRequestOptions(): GonkaGateRequestOptions {
@@ -45,13 +42,9 @@ export async function requestGonkaGateModelsResponse(
 		itemIndex?: number;
 	} = {},
 ): Promise<GonkaGateModelsResponse> {
-	return await requestGonkaGateModelsEndpoint(
-		context,
-		createGonkaGateListModelsRequestOptions(),
-		{
-			itemIndex: input.itemIndex,
-		},
-	);
+	return await requestGonkaGateModelsEndpoint(context, createGonkaGateListModelsRequestOptions(), {
+		itemIndex: input.itemIndex,
+	});
 }
 
 export async function fetchGonkaGateModelCatalog(

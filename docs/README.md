@@ -19,16 +19,20 @@ currently implemented backend surface:
 - [n8n GonkaGate Node Research](./specs/n8n-gonkagate-node-research/spec.md)
 - [n8n GonkaGate PRD](./specs/n8n-gonkagate-prd/spec.md)
 
-## Workflow Plans
+## Planning Notes
 
-- [Research Workflow Plan](./specs/n8n-gonkagate-node-research/workflow-plan.md)
-- [PRD Workflow Plan](./specs/n8n-gonkagate-prd/workflow-plan.md)
-
-## Plans
-
-- [Implementation Plan](./plans/n8n-gonkagate-node-mvp-implementation-plan.md)
+The detailed workflow-plan and implementation-plan artifacts are not currently
+checked into this repository. Treat the PRD, install docs, compatibility
+matrix, and release checklist as the maintained operational source of truth.
 
 ## Operational Guides
+
+If you want to install this package on a real self-hosted `n8n` instance, start
+with [Installation Guide](./install.md).
+If the package is already installed and you want to verify it in the UI,
+continue with [Quickstart](./quickstart.md).
+If you are contributing locally from this repository, use the local-development
+path documented in [Installation Guide](./install.md).
 
 - [Quickstart](./quickstart.md)
 - [Installation Guide](./install.md)
@@ -40,6 +44,7 @@ currently implemented backend surface:
 ## Examples
 
 - [Importable First Request Workflow](../examples/quickstart/gonkagate-first-request.workflow.json)
+- [Self-Hosted Docker Example](../examples/docker/self-hosted)
 
 ## Notes
 

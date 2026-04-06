@@ -20,10 +20,7 @@ export type SupplyDataContextOptions = {
 	) => Promise<GonkaGateCredentialData> | GonkaGateCredentialData;
 };
 type SupplyDataContextMock = {
-	getCredentials(
-		credentialName: string,
-		itemIndex: number,
-	): Promise<GonkaGateCredentialData>;
+	getCredentials(credentialName: string, itemIndex: number): Promise<GonkaGateCredentialData>;
 	getNode(): ReturnType<typeof createTestNode>;
 	getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown): unknown;
 };

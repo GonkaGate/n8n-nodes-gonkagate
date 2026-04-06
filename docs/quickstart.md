@@ -1,6 +1,10 @@
 # Quickstart
 
-This is the fastest path to your first GonkaGate request in self-hosted `n8n`.
+This is the fastest path to your first GonkaGate request after the package is
+already installed in self-hosted `n8n`.
+
+Before you start, install the package using one of the supported paths in the
+[Installation Guide](./install.md).
 
 Recommended first path:
 
@@ -23,15 +27,69 @@ AI Agent or another `n8n` AI workflow shape.
 
 ## Fastest Path To First Request
 
-### 1. Install The Package
+### 1. Open The n8n UI
 
-Follow the self-hosted install path in [Installation Guide](./install.md).
+Open `http://localhost:5678` in your browser.
 
-If you already have the package installed, skip to step 2.
+If your `n8n` instance runs on another host or domain, open that URL instead.
 
-### 2. Import The Example Workflow
+### 2. Create A Blank Workflow
 
-Import this workflow into `n8n`:
+Click `Start from scratch`.
+
+### 3. Add `Manual Trigger`
+
+Add a `Manual Trigger` node first.
+
+### 4. Add The GonkaGate Node
+
+1. Click `+` to add the next node.
+2. In the current `n8n` UI, the picker may open on `AI Nodes`.
+3. Type `gonka` or `GonkaGate` into the search box.
+4. Look at `Results in other categories` if the picker header still says
+   `AI Nodes`.
+5. Choose `GonkaGate` for the first check.
+
+Do not start with `GonkaGate Chat Model` for your first validation run.
+Use `GonkaGate` first, then move to the chat-model node later if needed.
+If search also shows `GonkaGate Tool`, skip it for the first check too.
+
+### 5. Test `List Models` First
+
+In the `GonkaGate` node:
+
+1. Set `Operation` to `List Models`.
+2. Open credentials.
+3. Create `GonkaGate API`.
+4. Paste your API key.
+5. Save the credential.
+6. Run the node with `Execute step` or `Execute workflow`.
+
+You do not need to type the base URL manually in the common case.
+
+If everything is wired correctly, you should get a JSON response from
+`GET /v1/models`.
+That is the fastest way to confirm the installed GonkaGate package is loaded
+and can authenticate successfully.
+
+### 6. Test `Chat Completion`
+
+After `List Models` works:
+
+1. Change `Operation` to `Chat Completion`.
+2. Try the live model list first.
+3. If the list is empty or unavailable, switch the model field to `ID`.
+4. Enter a known-good model ID manually if needed.
+5. Leave one simple user message such as `Hello from n8n`.
+6. Run the node again.
+
+If everything is configured correctly, the `GonkaGate` node should return one
+final JSON response from `POST /v1/chat/completions`.
+
+### 7. Optional: Import The Example Workflow
+
+If you prefer to skip the manual setup after the first check, import this
+workflow into `n8n`:
 
 - [GonkaGate First Request Workflow](../examples/quickstart/gonkagate-first-request.workflow.json)
 
@@ -41,38 +99,6 @@ This example already includes:
 - `GonkaGate`
 - `Chat Completion`
 - a starter user message
-
-What you still need to do after import:
-
-- select or create a `GonkaGate API` credential
-- choose a model from the live list
-- or switch to `ID` mode and enter a model manually
-
-### 3. Create The Credential
-
-In the imported `GonkaGate` node:
-
-1. Open credentials.
-2. Create `GonkaGate API`.
-3. Paste your API key.
-4. Save the credential.
-
-You do not need to type the base URL manually in the common case.
-
-### 4. Choose A Model
-
-Recommended order:
-
-1. Try the live model list first.
-2. If the list is empty or unavailable, switch the model field to `ID`.
-3. Enter a known-good model ID manually.
-
-### 5. Run The Workflow
-
-Click `Execute workflow`, then run the `Manual Trigger`.
-
-If everything is configured correctly, the `GonkaGate` node should return one
-final JSON response from `POST /v1/chat/completions`.
 
 ## Expected Successful Result
 
@@ -108,11 +134,14 @@ Treat this as an example shape, not a hardcoded contract sample.
 Create this minimal flow:
 
 1. Add `Manual Trigger`.
-2. Add `GonkaGate`.
-3. Set `Operation` to `Chat Completion`.
-4. Select or create `GonkaGate API`.
-5. Pick a model from the list, or enter one via `ID`.
-6. Leave the starter messages as-is and run the node.
+2. Click `+`.
+3. If the node picker opens in `AI Nodes`, search for `gonka`.
+4. Choose `GonkaGate` from `Results in other categories`.
+5. Ignore `GonkaGate Tool` and `GonkaGate Chat Model` for the first check.
+6. Set `Operation` to `Chat Completion`.
+7. Select or create `GonkaGate API`.
+8. Pick a model from the list, or enter one via `ID`.
+9. Leave the starter messages as-is and run the node.
 
 ## What To Do Next
 

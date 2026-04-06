@@ -16,3 +16,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run ci
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - run: docker build --build-arg N8N_VERSION=2.14.2 -t gonkagate-n8n:test .

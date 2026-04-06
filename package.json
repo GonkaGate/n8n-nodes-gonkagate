@@ -15,6 +15,9 @@
 		"name": "GonkaGate"
 	},
 	"type": "commonjs",
+	"publishConfig": {
+		"access": "public"
+	},
 	"files": [
 		"dist",
 		"README.md",
@@ -72,5 +75,28 @@
 	"peerDependencies": {
 		"ai-node-sdk": "npm:@n8n/ai-node-sdk@0.4.1",
 		"n8n-workflow": "*"
+	},
+	"overrides": {
+		"@n8n/ai-utilities@0.7.1": {
+			"@langchain/classic": "1.0.25",
+			"@langchain/community": "1.1.25",
+			"@langchain/core": "1.1.39"
+		},
+		"@n8n/ai-utilities@0.8.1": {
+			"@langchain/classic": "1.0.25",
+			"@langchain/community": "1.1.25",
+			"@langchain/core": "1.1.39"
+		},
+		"@langchain/community@1.1.25": {
+			"ignore": "7.0.5"
+		},
+		"@typescript-eslint/typescript-estree": {
+			"minimatch": "9.0.7"
+		},
+		"handlebars": "4.7.9",
+		"lodash": "4.18.1",
+		"release-it": {
+			"undici": "6.24.1"
+		}
 	}
 }

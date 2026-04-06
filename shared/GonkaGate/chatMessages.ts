@@ -33,8 +33,7 @@ export function parseGonkaGateChatMessages(
 		try {
 			messages = JSON.parse(messages);
 		} catch (error) {
-			const parseError =
-				error instanceof Error ? error : new Error('Messages must be valid JSON');
+			const parseError = error instanceof Error ? error : new Error('Messages must be valid JSON');
 
 			throw new NodeOperationError(node, parseError, {
 				itemIndex,

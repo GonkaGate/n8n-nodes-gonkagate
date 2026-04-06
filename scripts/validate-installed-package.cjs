@@ -1,4 +1,5 @@
-const { LazyPackageDirectoryLoader } = require('n8n-core');
+const path = require('node:path');
+const { createRequire } = require('node:module');
 
 async function main() {
 	const packageDirectory = process.argv[2];
@@ -7,6 +8,8 @@ async function main() {
 		throw new Error('Missing installed package directory argument');
 	}
 
+	const sandboxRequire = createRequire(path.join(process.cwd(), 'package.json'));
+	const { LazyPackageDirectoryLoader } = sandboxRequire('n8n-core');
 	const loader = new LazyPackageDirectoryLoader(packageDirectory, [], []);
 	await loader.loadAll();
 

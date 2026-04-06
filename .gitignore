@@ -1,4 +1,6 @@
 dist
 .test-dist
+.tsbuildinfo
 node_modules
 *.tgz
+examples/docker/self-hosted/.env

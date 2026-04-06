@@ -2,6 +2,43 @@
 
 Use this checklist before tagging a cautious self-hosted `v0.x` release.
 
+## Release Automation
+
+This repository publishes from `main`, not `master`.
+
+The current release flow is:
+
+1. Merge user-facing changes into `main`.
+2. Let `Release Please` update or open the release PR from commits on `main`.
+3. Merge that release PR into `main`.
+4. Let `Release Please` create the `vX.Y.Z` tag and dispatch:
+   - `.github/workflows/publish.yml` for npm
+   - `.github/workflows/publish-docker.yml` for the public Docker image
+5. Let the publish workflows handle:
+   - npm package verification and `npm publish --provenance --access public`
+   - GHCR image build, push, and artifact attestation
+
+Both publish workflows skip the actual publish step if the same released
+version already exists.
+
+You can also run:
+
+- `publish.yml` in `check` mode to validate npm OIDC without publishing
+- `publish-docker.yml` in `check` mode to build the image without pushing it
+
+## External Preconditions
+
+These are not stored in the git tree, so verify them in GitHub/npm settings:
+
+1. The npm scope `@gonkagate` exists and the publishing account can publish the
+   package.
+2. npm Trusted Publisher is configured for this GitHub repository and workflow.
+3. The GitHub Actions environment named `release` exists and allows the publish
+   jobs to run.
+4. GHCR package publishing is allowed for this repository.
+5. After the first successful Docker publish, set the GHCR package visibility
+   to `public` if GitHub created it as private.
+
 ## Repo Checks
 
 1. Run the default repo checks:
@@ -28,12 +65,19 @@ npm run test:unit
 npm pack --dry-run
 ```
 
-5. Confirm onboarding docs still match the current node behavior:
+5. Build the release Docker image locally:
+
+```bash
+docker build -t gonkagate-n8n:release-check .
+```
+
+6. Confirm onboarding docs still match the current node behavior:
 
 - [README.md](../README.md)
 - [Quickstart](./quickstart.md)
 - [Installation Guide](./install.md)
 - [Importable First Request Workflow](../examples/quickstart/gonkagate-first-request.workflow.json)
+- [Self-Hosted Docker Example](../examples/docker/self-hosted/README.md)
 
 ## Self-Hosted Install Proof
 
@@ -74,15 +118,19 @@ against a real GonkaGate backend with a working API key:
 Before tagging:
 
 1. Confirm the changelog matches the shipped support surface.
-2. Confirm install and rollback guidance still matches `~/.n8n/nodes`.
+2. Confirm install and rollback guidance still matches:
+   - `~/.n8n/nodes` for npm-based installs
+   - `ghcr.io/gonkagate/n8n-nodes-gonkagate` for the published Docker image
 3. Confirm package docs still state:
    - root node remains durable
    - `GonkaGate Chat Model` is additive
    - `/v1/responses` is not claimed
    - `n8n` Cloud is not claimed
-4. Confirm the quickstart workflow still imports and reaches the same setup
+4. Confirm the Docker example still starts from the published image and pins
+   the expected registry path.
+5. Confirm the quickstart workflow still imports and reaches the same setup
    steps described in the docs.
-5. Confirm the compatibility matrix does not overclaim beyond the tested
+6. Confirm the compatibility matrix does not overclaim beyond the tested
    versions and live proof actually collected.
-6. Do not describe the package as verified-node-ready while the current AI node
+7. Do not describe the package as verified-node-ready while the current AI node
    SDK remains preview-only for verification.
