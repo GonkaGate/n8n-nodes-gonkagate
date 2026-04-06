@@ -19,6 +19,13 @@
 - Refresh the README, specs, compatibility docs, fallback guidance, and release
   docs to the new two-surface package truth.
 
+## [0.2.1](https://github.com/GonkaGate/n8n-nodes-gonkagate/compare/v0.2.0...v0.2.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* update Dockerfile to improve node module installation and symlink handling for ai-node-sdk and n8n-workflow ([79605e4](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/79605e424a53d8a4e3c1093df2e1bbf9bbbe3633))
+
 ## [0.2.0](https://github.com/GonkaGate/n8n-nodes-gonkagate/compare/v0.1.0...v0.2.0) (2026-04-06)
 
 ### Features
