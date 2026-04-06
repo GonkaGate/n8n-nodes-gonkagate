@@ -21,11 +21,10 @@
 
 ## [0.2.0](https://github.com/GonkaGate/n8n-nodes-gonkagate/compare/v0.1.0...v0.2.0) (2026-04-06)
 
-
 ### Features
 
-* add docker install and release automation ([18a7ad2](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/18a7ad2acdfcbb38a30fa5063a26a0ca823d27ee))
-* add docker install and release automation ([7d0ef07](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/7d0ef07c2267c7311110a666edcb5af235c07fa1))
+- add docker install and release automation ([18a7ad2](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/18a7ad2acdfcbb38a30fa5063a26a0ca823d27ee))
+- add docker install and release automation ([7d0ef07](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/7d0ef07c2267c7311110a666edcb5af235c07fa1))
 
 ## 0.1.0
 
