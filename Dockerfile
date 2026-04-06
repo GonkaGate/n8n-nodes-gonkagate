@@ -20,6 +20,18 @@ LABEL org.opencontainers.image.licenses="MIT"
 
 COPY --from=builder /workspace/*.tgz /tmp/gonkagate-n8n-nodes-gonkagate.tgz
 
-RUN mkdir -p /home/node/.n8n/nodes \
- && npm install --prefix /home/node/.n8n/nodes --omit=dev --no-audit --no-fund /tmp/gonkagate-n8n-nodes-gonkagate.tgz \
+RUN N8N_NODE_MODULES="$(npm root -g)/n8n/node_modules" \
+ && AI_NODE_SDK_PATH="$N8N_NODE_MODULES/ai-node-sdk" \
+ && N8N_WORKFLOW_PATH="$N8N_NODE_MODULES/n8n-workflow" \
+ && if [ ! -d "$AI_NODE_SDK_PATH" ]; then AI_NODE_SDK_PATH="$N8N_NODE_MODULES/@n8n/ai-node-sdk"; fi \
+ && if [ ! -d "$N8N_WORKFLOW_PATH" ]; then N8N_WORKFLOW_PATH="$(npm root -g)/n8n-workflow"; fi \
+ && test -d "$N8N_NODE_MODULES" \
+ && test -d "$AI_NODE_SDK_PATH" \
+ && test -d "$N8N_WORKFLOW_PATH" \
+ && mkdir -p /home/node/.n8n/nodes/node_modules \
+ && npm install --prefix /home/node/.n8n/nodes --omit=dev --legacy-peer-deps --no-audit --no-fund /tmp/gonkagate-n8n-nodes-gonkagate.tgz \
+ && ln -sfn "$AI_NODE_SDK_PATH" /home/node/.n8n/nodes/node_modules/ai-node-sdk \
+ && ln -sfn "$N8N_WORKFLOW_PATH" /home/node/.n8n/nodes/node_modules/n8n-workflow \
+ && test -e /home/node/.n8n/nodes/node_modules/ai-node-sdk \
+ && test -e /home/node/.n8n/nodes/node_modules/n8n-workflow \
  && rm -f /tmp/gonkagate-n8n-nodes-gonkagate.tgz
