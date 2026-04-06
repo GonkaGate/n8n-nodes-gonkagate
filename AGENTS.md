@@ -250,6 +250,36 @@ Do not run these without explicit user intent:
 - any license change
 - any package rename
 
+### Commit Message Rules
+
+This repository uses `release-please`, so commit messages must follow the
+Conventional Commits style.
+
+Use this default shape:
+
+- `<type>(<scope>): <short imperative summary>`
+
+Examples:
+
+- `feat(docker): publish a ready-to-run GHCR image`
+- `fix(models): handle empty model catalog responses`
+- `docs(install): clarify Docker self-hosted path`
+
+Commit typing rules:
+
+- use `feat` for user-visible additions that should trigger a minor release
+- use `fix` for user-visible bug fixes that should trigger a patch release
+- use `docs`, `test`, `ci`, `build`, `refactor`, or `chore` only when you do
+  not intend the commit itself to drive a release bump
+- if a change is release-relevant, do not hide it under `chore`
+- if one commit contains mixed work, choose the highest-signal release type
+
+Message hygiene:
+
+- keep the summary short, specific, and imperative
+- do not end the summary with a period
+- avoid vague subjects such as `update stuff` or `misc fixes`
+
 ## 9. UX And Naming Guardrails
 
 Do:
