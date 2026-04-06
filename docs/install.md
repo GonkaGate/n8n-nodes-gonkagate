@@ -275,24 +275,29 @@ Use this when:
 
 ### Step 1. Reuse The Repository Dockerfile
 
-This repository includes a buildable root [Dockerfile](../Dockerfile).
-It builds the package from source, packs it, and installs that tarball into the
-official `n8n` image.
+This repository includes two Dockerfile paths:
 
-That means your image build does not depend on npm publish timing.
+- [Dockerfile](../Dockerfile):
+  release-style image that installs the already-published npm package
+- [Dockerfile.local](../Dockerfile.local):
+  source-build image for local or unpublished builds
+
+For custom builds from this repository, use
+[Dockerfile.local](../Dockerfile.local).
+This source-build path does not depend on npm publish timing.
 
 ### Step 2. Build The Image
 
 From the repository root:
 
 ```bash
-docker build -t your-registry/n8n-gonkagate:<image-tag> .
+docker build -f Dockerfile.local -t your-registry/n8n-gonkagate:<image-tag> .
 ```
 
 You can also override the base `n8n` image version:
 
 ```bash
-docker build --build-arg N8N_VERSION=2.14.2 -t your-registry/n8n-gonkagate:<image-tag> .
+docker build --file Dockerfile.local --build-arg N8N_VERSION=2.14.2 -t your-registry/n8n-gonkagate:<image-tag> .
 ```
 
 ### Step 3. Run The Image
