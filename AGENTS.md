@@ -274,6 +274,17 @@ Commit typing rules:
 - if a change is release-relevant, do not hide it under `chore`
 - if one commit contains mixed work, choose the highest-signal release type
 
+Release Please behavior:
+
+- `release-please` opens a release PR only from releasable commit types such as
+  `feat` and `fix`
+- merges into `main` that contain only `docs`, `chore`, `ci`, `test`, or other
+  non-releasable commit types will not create a new version by themselves
+- non-conventional subjects such as `Add Docker flow` are treated as
+  non-releasable for release automation purposes
+- if you expect a new package version, make sure the commit subject itself is a
+  releasable Conventional Commit before merging to `main`
+
 Message hygiene:
 
 - keep the summary short, specific, and imperative
