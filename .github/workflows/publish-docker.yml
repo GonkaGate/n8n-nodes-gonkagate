@@ -1,9 +1,6 @@
 name: Publish (Docker)
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       action:
@@ -15,7 +12,7 @@ on:
           - check
           - publish
       publish_ref:
-        description: Git ref to publish (for example tag v0.1.2). Leave empty to publish the workflow ref.
+        description: Git ref to publish (for example tag v0.2.0). Leave empty to publish the workflow ref.
         required: false
         type: string
         default: ''
@@ -34,7 +31,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_ref != '' && github.event.inputs.publish_ref || github.ref }}
+          ref: ${{ github.event.inputs.publish_ref != '' && github.event.inputs.publish_ref || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -48,6 +45,7 @@ jobs:
           set -euo pipefail
 
           IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
           VERSION=$(node -p "require('./package.json').version")
           BASE_VERSION=${VERSION%%-*}
           GIT_SHA=$(git rev-parse --short=12 HEAD)
@@ -61,12 +59,35 @@ jobs:
 
           {
             echo "image=$IMAGE"
+            echo "package_name=$PACKAGE_NAME"
             echo "version=$VERSION"
             echo "major=$MAJOR"
             echo "minor=$MINOR"
             echo "is_prerelease=$IS_PRERELEASE"
             echo "git_sha=$GIT_SHA"
           } >>"$GITHUB_OUTPUT"
+
+      - name: Wait for npm package version to be available
+        if: github.event.inputs.action == 'publish'
+        shell: bash
+        env:
+          PACKAGE_NAME: ${{ steps.vars.outputs.package_name }}
+          VERSION: ${{ steps.vars.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 20); do
+            if npm view "${PACKAGE_NAME}@${VERSION}" version >/dev/null 2>&1; then
+              echo "npm package ${PACKAGE_NAME}@${VERSION} is available."
+              exit 0
+            fi
+
+            echo "Waiting for ${PACKAGE_NAME}@${VERSION} to appear on npm (${attempt}/20)..."
+            sleep 15
+          done
+
+          echo "::error::Timed out waiting for ${PACKAGE_NAME}@${VERSION} to appear on npm."
+          exit 1
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -83,7 +104,7 @@ jobs:
 
       - name: Check whether this image version is already published
         id: publish_check
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'publish')
+        if: github.event.inputs.action == 'publish'
         shell: bash
         env:
           IMAGE: ${{ steps.vars.outputs.image }}
@@ -112,6 +133,7 @@ jobs:
             type=raw,value=latest,enable=${{ steps.vars.outputs.is_prerelease == 'false' }}
             type=raw,value=sha-${{ steps.vars.outputs.git_sha }}
           labels: |
+            io.n8n.version.base=2.14.2
             org.opencontainers.image.title=GonkaGate for n8n
             org.opencontainers.image.description=Self-hosted n8n image with the GonkaGate community nodes preinstalled.
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
@@ -120,23 +142,24 @@ jobs:
 
       - name: Build and optionally push Docker image
         id: build
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check' || steps.publish_check.outputs.should_publish == 'true'
+        if: github.event.inputs.action == 'check' || steps.publish_check.outputs.should_publish == 'true'
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'publish' && steps.publish_check.outputs.should_publish == 'true') }}
+          push: ${{ github.event.inputs.action == 'publish' && steps.publish_check.outputs.should_publish == 'true' }}
           provenance: false
           build-args: |
             N8N_VERSION=2.14.2
+            GONKAGATE_NODE_VERSION=${{ github.event.inputs.action == 'check' && 'latest' || steps.vars.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
 
       - name: Generate artifact attestation
-        if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'publish')) && steps.publish_check.outputs.should_publish == 'true'
+        if: github.event.inputs.action == 'publish' && steps.publish_check.outputs.should_publish == 'true'
         uses: actions/attest@v4
         with:
           subject-name: ${{ steps.vars.outputs.image }}

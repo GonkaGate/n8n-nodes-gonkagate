@@ -11,12 +11,13 @@ The current release flow is:
 1. Merge user-facing changes into `main`.
 2. Let `Release Please` update or open the release PR from commits on `main`.
 3. Merge that release PR into `main`.
-4. Let `Release Please` create the `vX.Y.Z` tag and dispatch:
-   - `.github/workflows/publish.yml` for npm
-   - `.github/workflows/publish-docker.yml` for the public Docker image
-5. Let the publish workflows handle:
+4. Let `Release Please` create the `vX.Y.Z` tag and dispatch
+   `.github/workflows/publish.yml` for npm.
+5. Let `publish.yml` handle:
    - npm package verification and `npm publish --provenance --access public`
-   - GHCR image build, push, and artifact attestation
+   - dispatching `.github/workflows/publish-docker.yml`
+6. Let `publish-docker.yml` wait for the npm package version to exist, then
+   build the GHCR image from that published package and attach an attestation.
 
 Both publish workflows skip the actual publish step if the same released
 version already exists.
@@ -65,13 +66,20 @@ npm run test:unit
 npm pack --dry-run
 ```
 
-5. Build the release Docker image locally:
+5. Build the local source-based Docker image used by CI:
 
 ```bash
-docker build -t gonkagate-n8n:release-check .
+docker build -f Dockerfile.local -t gonkagate-n8n:local-check .
 ```
 
-6. Confirm onboarding docs still match the current node behavior:
+6. If the target package version is already published to npm, validate the
+   release Dockerfile path too:
+
+```bash
+docker build --build-arg GONKAGATE_NODE_VERSION=<published-version> -t gonkagate-n8n:release-check .
+```
+
+7. Confirm onboarding docs still match the current node behavior:
 
 - [README.md](../README.md)
 - [Quickstart](./quickstart.md)
@@ -126,11 +134,16 @@ Before tagging:
    - `GonkaGate Chat Model` is additive
    - `/v1/responses` is not claimed
    - `n8n` Cloud is not claimed
-4. Confirm the Docker example still starts from the published image and pins
+4. Confirm the published image still installs
+   `@gonkagate/n8n-nodes-gonkagate@<released-version>` into the official `n8n`
+   image.
+5. Confirm the source-build path in `Dockerfile.local` still works for local
+   smoke builds and unpublished package changes.
+6. Confirm the Docker example still starts from the published image and pins
    the expected registry path.
-5. Confirm the quickstart workflow still imports and reaches the same setup
+7. Confirm the quickstart workflow still imports and reaches the same setup
    steps described in the docs.
-6. Confirm the compatibility matrix does not overclaim beyond the tested
+8. Confirm the compatibility matrix does not overclaim beyond the tested
    versions and live proof actually collected.
-7. Do not describe the package as verified-node-ready while the current AI node
+9. Do not describe the package as verified-node-ready while the current AI node
    SDK remains preview-only for verification.

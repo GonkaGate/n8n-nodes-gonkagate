@@ -1,0 +1,36 @@
+ARG NODE_VERSION=24
+ARG N8N_VERSION=2.14.2
+
+FROM node:${NODE_VERSION}-bookworm-slim AS builder
+
+WORKDIR /workspace
+
+COPY . .
+
+RUN npm ci
+RUN npm run build
+RUN npm pack
+
+FROM node:${NODE_VERSION}-bookworm-slim AS package-installer
+
+WORKDIR /addon
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends python3 make g++ \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /workspace/*.tgz /tmp/gonkagate-n8n-nodes-gonkagate.tgz
+
+RUN npm init -y >/dev/null \
+ && npm install --omit=dev --no-audit --no-fund /tmp/gonkagate-n8n-nodes-gonkagate.tgz \
+ && rm -f /tmp/gonkagate-n8n-nodes-gonkagate.tgz
+
+FROM docker.n8n.io/n8nio/n8n:${N8N_VERSION}
+
+LABEL org.opencontainers.image.title="GonkaGate for n8n"
+LABEL org.opencontainers.image.description="Self-hosted n8n image with the GonkaGate community nodes preinstalled."
+LABEL org.opencontainers.image.source="https://github.com/GonkaGate/n8n-nodes-gonkagate"
+LABEL org.opencontainers.image.licenses="MIT"
+
+COPY --chown=node:node --from=package-installer /addon/node_modules /home/node/.n8n/nodes/node_modules
+COPY --chown=node:node --from=package-installer /addon/package.json /home/node/.n8n/nodes/package.json
