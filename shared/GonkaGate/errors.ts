@@ -419,7 +419,9 @@ function toErrorInstance(error: unknown, fallbackMessage = 'Unknown error'): Err
 		return error;
 	}
 
-	return new Error(extractPrimaryMessage(error) ?? extractString(error, 'message') ?? fallbackMessage);
+	return new Error(
+		extractPrimaryMessage(error) ?? extractString(error, 'message') ?? fallbackMessage,
+	);
 }
 
 function toJsonObject(value: unknown): JsonObject {
@@ -489,11 +491,7 @@ function toJsonValue(value: unknown): JsonValue | undefined {
 	return undefined;
 }
 
-function assignIfDefined(
-	target: Record<string, unknown>,
-	key: string,
-	value: unknown,
-): void {
+function assignIfDefined(target: Record<string, unknown>, key: string, value: unknown): void {
 	if (value !== undefined) {
 		target[key] = value;
 	}

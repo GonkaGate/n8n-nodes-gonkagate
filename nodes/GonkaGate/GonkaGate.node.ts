@@ -7,7 +7,11 @@ import type {
 import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { normalizeGonkaGateError, serializeGonkaGateError } from '../../shared/GonkaGate/errors';
-import { GONKAGATE_NODE_DESCRIPTION, GONKAGATE_NODE_DISPLAY_NAME } from '../../shared/GonkaGate/metadata';
+import {
+	GONKAGATE_NODE_DESCRIPTION,
+	GONKAGATE_NODE_DISPLAY_NAME,
+	GONKAGATE_NODE_ICON,
+} from '../../shared/GonkaGate/metadata';
 import { GONKAGATE_MODEL_SELECTOR_METHODS } from '../../shared/GonkaGate/modelParameter';
 import { createGonkaGateNodeDescription } from '../../shared/GonkaGate/nodeDescription';
 import { GONKAGATE_OPERATION_PARAMETER_NAME } from '../../shared/GonkaGate/parameters';
@@ -31,16 +35,20 @@ const gonkaGateRootNodeProperties = [
 export class GonkaGate implements INodeType {
 	methods = GONKAGATE_MODEL_SELECTOR_METHODS;
 
-	description: INodeTypeDescription = createGonkaGateNodeDescription({
-		displayName: GONKAGATE_NODE_DISPLAY_NAME,
-		name: 'gonkaGate',
-		subtitle: `={{$parameter["${GONKAGATE_OPERATION_PARAMETER_NAME}"]}}`,
-		description: GONKAGATE_NODE_DESCRIPTION,
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+	description: INodeTypeDescription = {
+		...createGonkaGateNodeDescription({
+			displayName: GONKAGATE_NODE_DISPLAY_NAME,
+			name: 'gonkaGate',
+			subtitle: `={{$parameter["${GONKAGATE_OPERATION_PARAMETER_NAME}"]}}`,
+			description: GONKAGATE_NODE_DESCRIPTION,
+			inputs: [NodeConnectionTypes.Main],
+			outputs: [NodeConnectionTypes.Main],
+			usableAsTool: true,
+			properties: gonkaGateRootNodeProperties,
+		}),
+		icon: GONKAGATE_NODE_ICON,
 		usableAsTool: true,
-		properties: gonkaGateRootNodeProperties,
-	});
+	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const inputItems = this.getInputData();

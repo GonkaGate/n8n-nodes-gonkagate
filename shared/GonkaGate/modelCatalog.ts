@@ -54,7 +54,9 @@ export function matchesGonkaGateModelFilter(
 		return true;
 	}
 
-	return getModelSearchValues(model).some((value) => value.toLowerCase().includes(normalizedFilter));
+	return getModelSearchValues(model).some((value) =>
+		value.toLowerCase().includes(normalizedFilter),
+	);
 }
 
 function toModelRecord(model: Record<string, unknown>): GonkaGateModelRecord | null {

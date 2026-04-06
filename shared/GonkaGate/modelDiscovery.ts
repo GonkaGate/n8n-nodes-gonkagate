@@ -1,4 +1,8 @@
-import type { ILoadOptionsFunctions, INodeListSearchItems, INodeListSearchResult } from 'n8n-workflow';
+import type {
+	ILoadOptionsFunctions,
+	INodeListSearchItems,
+	INodeListSearchResult,
+} from 'n8n-workflow';
 import { NodeApiError } from 'n8n-workflow';
 
 import { hasGonkaGateCredential } from './credentials';

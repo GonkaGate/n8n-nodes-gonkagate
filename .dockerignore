@@ -1,0 +1,10 @@
+.agents
+.claude
+.git
+.github
+.test-dist
+dist
+docs
+examples/docker/self-hosted/.env
+node_modules
+*.tgz

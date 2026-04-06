@@ -1,0 +1,144 @@
+name: Publish (Docker)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to do (check builds without pushing)
+        required: true
+        type: choice
+        default: check
+        options:
+          - check
+          - publish
+      publish_ref:
+        description: Git ref to publish (for example tag v0.1.2). Leave empty to publish the workflow ref.
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_ref != '' && github.event.inputs.publish_ref || github.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+
+      - name: Resolve image metadata
+        id: vars
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          VERSION=$(node -p "require('./package.json').version")
+          BASE_VERSION=${VERSION%%-*}
+          GIT_SHA=$(git rev-parse --short=12 HEAD)
+          IFS='.' read -r MAJOR MINOR PATCH <<<"$BASE_VERSION"
+
+          if [[ "$VERSION" == *-* ]]; then
+            IS_PRERELEASE=true
+          else
+            IS_PRERELEASE=false
+          fi
+
+          {
+            echo "image=$IMAGE"
+            echo "version=$VERSION"
+            echo "major=$MAJOR"
+            echo "minor=$MINOR"
+            echo "is_prerelease=$IS_PRERELEASE"
+            echo "git_sha=$GIT_SHA"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check whether this image version is already published
+        id: publish_check
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'publish')
+        shell: bash
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+          VERSION: ${{ steps.vars.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          if docker buildx imagetools inspect "${IMAGE}:${VERSION}" >/dev/null 2>&1; then
+            echo "Image ${IMAGE}:${VERSION} is already published; skipping publish."
+            echo "should_publish=false" >>"$GITHUB_OUTPUT"
+          else
+            echo "Image ${IMAGE}:${VERSION} is not published yet; continuing."
+            echo "should_publish=true" >>"$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ steps.vars.outputs.image }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=${{ steps.vars.outputs.version }}
+            type=raw,value=${{ steps.vars.outputs.major }}.${{ steps.vars.outputs.minor }},enable=${{ steps.vars.outputs.is_prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ steps.vars.outputs.is_prerelease == 'false' }}
+            type=raw,value=sha-${{ steps.vars.outputs.git_sha }}
+          labels: |
+            org.opencontainers.image.title=GonkaGate for n8n
+            org.opencontainers.image.description=Self-hosted n8n image with the GonkaGate community nodes preinstalled.
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.version=${{ steps.vars.outputs.version }}
+
+      - name: Build and optionally push Docker image
+        id: build
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'check' || steps.publish_check.outputs.should_publish == 'true'
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'publish' && steps.publish_check.outputs.should_publish == 'true') }}
+          provenance: false
+          build-args: |
+            N8N_VERSION=2.14.2
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Generate artifact attestation
+        if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'publish')) && steps.publish_check.outputs.should_publish == 'true'
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ steps.vars.outputs.image }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true

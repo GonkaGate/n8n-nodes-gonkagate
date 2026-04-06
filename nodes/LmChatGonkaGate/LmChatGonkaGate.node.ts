@@ -17,6 +17,7 @@ import {
 import {
 	GONKAGATE_CHAT_MODEL_DESCRIPTION,
 	GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
+	GONKAGATE_NODE_ICON,
 } from '../../shared/GonkaGate/metadata';
 import { createGonkaGateNodeDescription } from '../../shared/GonkaGate/nodeDescription';
 
@@ -29,14 +30,18 @@ const gonkaGateChatModelNodeProperties: readonly INodeProperties[] = [
 export class LmChatGonkaGate implements INodeType {
 	methods = GONKAGATE_MODEL_SELECTOR_METHODS;
 
-	description: INodeTypeDescription = createGonkaGateNodeDescription({
-		displayName: GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
-		name: 'lmChatGonkaGate',
-		description: GONKAGATE_CHAT_MODEL_DESCRIPTION,
-		inputs: [],
-		outputs: [NodeConnectionTypes.AiLanguageModel],
-		properties: gonkaGateChatModelNodeProperties,
-	});
+	description: INodeTypeDescription = {
+		...createGonkaGateNodeDescription({
+			displayName: GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
+			name: 'lmChatGonkaGate',
+			description: GONKAGATE_CHAT_MODEL_DESCRIPTION,
+			inputs: [],
+			outputs: [NodeConnectionTypes.AiLanguageModel],
+			properties: gonkaGateChatModelNodeProperties,
+		}),
+		icon: GONKAGATE_NODE_ICON,
+		usableAsTool: true,
+	};
 
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
 		return await supplyGonkaGateChatModel(this, itemIndex);

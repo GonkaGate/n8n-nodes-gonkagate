@@ -14,22 +14,80 @@ Today the package targets GonkaGate's OpenAI-compatible
 `GET /v1/models` and `POST /v1/chat/completions` surface, with the canonical
 base URL fixed to `https://api.gonkagate.com/v1`.
 
-## Start Here
+## Install
 
-1. Install the package in self-hosted `n8n`.
-2. Create the `GonkaGate API` credential and paste your API key.
-3. Add the `GonkaGate` node, choose `Chat Completion`, pick a model, and run
-   the node.
-4. If you want the shortest path, import the
-   [first request workflow](./examples/quickstart/gonkagate-first-request.workflow.json)
-   and follow the [Quickstart](./docs/quickstart.md).
+This package is for self-hosted `n8n`.
+The easiest install path for most users is the Community Nodes UI inside `n8n`.
 
-Install the published package from the Community Nodes UI in self-hosted `n8n`.
-For local builds, Docker, manual install, or queue mode, use the
-[Installation Guide](./docs/install.md).
+### Easiest Install
 
-If you only want the fastest first request, start with `GonkaGate`, not
-`GonkaGate Chat Model`.
+1. Open your self-hosted `n8n` instance.
+2. Open `Settings`.
+3. Open `Community Nodes`.
+4. Click `Install`.
+5. Enter:
+
+```text
+@gonkagate/n8n-nodes-gonkagate
+```
+
+6. Confirm the community-node prompt if `n8n` shows it.
+7. Wait for installation to finish.
+8. Restart `n8n` if your deployment model requires it.
+
+If you use Docker, you can run the published image directly:
+
+```bash
+docker run -d \
+  --name n8n \
+  -p 5678:5678 \
+  -e GENERIC_TIMEZONE="<YOUR_TIMEZONE>" \
+  -e TZ="<YOUR_TIMEZONE>" \
+  -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true \
+  -v n8n_data:/home/node/.n8n \
+  ghcr.io/gonkagate/n8n-nodes-gonkagate:latest
+```
+
+For production, pin an exact image tag such as
+`ghcr.io/gonkagate/n8n-nodes-gonkagate:0.1.0`.
+If you prefer Docker Compose, use the ready example in
+[examples/docker/self-hosted](./examples/docker/self-hosted).
+
+If you use queue mode, want to merge this into an existing Docker stack, or
+need an unpublished build, use the [Installation Guide](./docs/install.md).
+
+## First Check
+
+After installation:
+
+1. Open your `n8n` UI.
+2. Click `Start from scratch`.
+3. Add `Manual Trigger`.
+4. Click `+` to add the next node.
+5. Search for `gonka` or `GonkaGate`.
+6. If `n8n` opens the `AI Nodes` picker first, check `Results in other
+categories`.
+7. Choose the plain `GonkaGate` node.
+8. Ignore `GonkaGate Tool` and `GonkaGate Chat Model` for the first check.
+9. Set `Operation` to `List Models`.
+10. Create `GonkaGate API`, paste your API key, and save.
+11. Click `Execute step` or `Execute workflow`.
+
+If that works, change the same node to `Chat Completion`, choose a model, and
+run one short test message.
+
+For the full click-by-click flow, continue with
+[Quickstart](./docs/quickstart.md).
+
+## Other Install Paths
+
+Use the [Installation Guide](./docs/install.md) if you need one of these:
+
+- manual `npm install` on a server
+- public Docker image via `docker run` or Docker Compose
+- advanced Docker install with your own custom image
+- queue mode or worker-based deployments
+- tarball install for staging or unpublished builds
 
 ## Which Node Should You Use?
 
@@ -64,7 +122,8 @@ For the exact support posture, see the
 
 ## Docs
 
-- [Quickstart](./docs/quickstart.md)
 - [Installation Guide](./docs/install.md)
+- [Quickstart](./docs/quickstart.md)
 - [Compatibility Matrix](./docs/compatibility.md)
 - [Known Limitations](./docs/known-limitations.md)
+- [Self-Hosted Docker Example](./examples/docker/self-hosted)

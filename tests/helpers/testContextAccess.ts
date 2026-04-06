@@ -8,9 +8,7 @@ import {
 
 export type TestNodeParameters = GonkaGateTestNodeParameters;
 
-export function createIndexedTestNodeParameterResolver(
-	itemParameters: TestNodeParameters[],
-) {
+export function createIndexedTestNodeParameterResolver(itemParameters: TestNodeParameters[]) {
 	return createIndexedParameterReader(itemParameters);
 }
 
