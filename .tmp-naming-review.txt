@@ -1,7 +1,0 @@
-1. [scripts/check-bootstrap.mjs](/Users/daniil/Projects/Opensource/n8n-nodes-gonkagate/scripts/check-bootstrap.mjs):5 - The name reads like a narrow bootstrap/file-presence check, but the `requiredPaths` list makes it a broader repository-contract gate for docs, workflows, examples, and node artifacts. That mismatch will make CI failures easier to misread.
-
-2. [nodes/LmChatGonkaGate/LmChatGonkaGate.node.ts](/Users/daniil/Projects/Opensource/n8n-nodes-gonkagate/nodes/LmChatGonkaGate/LmChatGonkaGate.node.ts):19 and [nodes/LmChatGonkaGate/LmChatGonkaGate.node.json](/Users/daniil/Projects/Opensource/n8n-nodes-gonkagate/nodes/LmChatGonkaGate/LmChatGonkaGate.node.json):2 - `LmChatGonkaGate` / `lmChatGonkaGate` is opaque unless you already know the n8n `LmChat` convention; it does not immediately read as the additive GonkaGate chat-model surface.
-
-3. [tests/gonkagate-models.test.ts](/Users/daniil/Projects/Opensource/n8n-nodes-gonkagate/tests/gonkagate-models.test.ts):87 - The file name suggests model-only coverage, but this suite also holds base URL resolution and chat-completion payload normalization, so a new contributor will look in the wrong place for request-shape behavior.
-
-4. [tests/helpers/gonkagateTestUtils.ts](/Users/daniil/Projects/Opensource/n8n-nodes-gonkagate/tests/helpers/gonkagateTestUtils.ts):12 - `createNode()` is too generic for a stub `INode` factory; it reads like a real node constructor and hides that the helper returns a hard-coded test double.
