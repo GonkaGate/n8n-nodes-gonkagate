@@ -1,6 +1,6 @@
 {
 	"name": "@gonkagate/n8n-nodes-gonkagate",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "n8n community node package for GonkaGate root-node and chat-model workflows.",
 	"homepage": "https://github.com/GonkaGate/n8n-nodes-gonkagate#readme",
 	"bugs": {
