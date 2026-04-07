@@ -19,6 +19,14 @@
 - Refresh the README, specs, compatibility docs, fallback guidance, and release
   docs to the new two-surface package truth.
 
+## [0.2.3](https://github.com/GonkaGate/n8n-nodes-gonkagate/compare/v0.2.2...v0.2.3) (2026-04-07)
+
+
+### Bug Fixes
+
+* **docker:** make published n8n image load GonkaGate nodes ([e9f1c24](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/e9f1c24852def4fc92905bef68f636f506781a40))
+* **docker:** make published n8n image load GonkaGate nodes ([9d8de7b](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/9d8de7b9d0df8a082169669eb2bd6abcdd4df85f))
+
 ## [0.2.2](https://github.com/GonkaGate/n8n-nodes-gonkagate/compare/v0.2.1...v0.2.2) (2026-04-06)
 
 
