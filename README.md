@@ -17,9 +17,10 @@ base URL fixed to `https://api.gonkagate.com/v1`.
 ## Install
 
 This package is for self-hosted `n8n`.
-The easiest install path for most users is the Community Nodes UI inside `n8n`.
+If you already run self-hosted `n8n`, the preferred and fastest install path
+is the Community Nodes UI inside `n8n`.
 
-### Easiest Install
+### Fastest Install
 
 1. Open your self-hosted `n8n` instance.
 2. Open `Settings`.
@@ -35,26 +36,16 @@ The easiest install path for most users is the Community Nodes UI inside `n8n`.
 7. Wait for installation to finish.
 8. Restart `n8n` if your deployment model requires it.
 
-If you use Docker, you can run the published image directly:
+If you already know `n8n`, that is usually all you need.
+If you use queue mode, want Docker or Docker Compose, need a tarball, or want
+an unpublished build, use the [Installation Guide](./docs/install.md).
 
-```bash
-docker run -d \
-  --name n8n \
-  -p 5678:5678 \
-  -e GENERIC_TIMEZONE="<YOUR_TIMEZONE>" \
-  -e TZ="<YOUR_TIMEZONE>" \
-  -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true \
-  -v n8n_data:/home/node/.n8n \
-  ghcr.io/gonkagate/n8n-nodes-gonkagate:latest
-```
+## See It In Action
 
-For production, pin an exact image tag such as
-`ghcr.io/gonkagate/n8n-nodes-gonkagate:0.1.0`.
-If you prefer Docker Compose, use the ready example in
-[examples/docker/self-hosted](./examples/docker/self-hosted).
+From Community Nodes install to a working GonkaGate node in one short
+walkthrough:
 
-If you use queue mode, want to merge this into an existing Docker stack, or
-need an unpublished build, use the [Installation Guide](./docs/install.md).
+[![Install GonkaGate in n8n](https://raw.githubusercontent.com/GonkaGate/n8n-nodes-gonkagate/main/.github/assets/gonkagate-n8n-demo.gif)](https://raw.githubusercontent.com/GonkaGate/n8n-nodes-gonkagate/main/.github/assets/gonkagate-n8n-demo.mp4)
 
 ## First Check
 
@@ -83,8 +74,9 @@ For the full click-by-click flow, continue with
 
 Use the [Installation Guide](./docs/install.md) if you need one of these:
 
+- local macOS smoke test with `npm install -g n8n`
 - manual `npm install` on a server
-- public Docker image via `docker run` or Docker Compose
+- Docker or Docker Compose
 - advanced Docker install with your own custom image
 - queue mode or worker-based deployments
 - tarball install for staging or unpublished builds

@@ -29,6 +29,8 @@ matrix, and release checklist as the maintained operational source of truth.
 
 If you want to install this package on a real self-hosted `n8n` instance, start
 with [Installation Guide](./install.md).
+That guide also includes a local macOS global-`npm` smoke-test path for
+walking the end-user install flow on a Mac.
 If the package is already installed and you want to verify it in the UI,
 continue with [Quickstart](./quickstart.md).
 If you are contributing locally from this repository, use the local-development

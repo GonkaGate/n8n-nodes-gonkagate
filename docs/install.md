@@ -28,7 +28,8 @@ ghcr.io/gonkagate/n8n-nodes-gonkagate
 
 | If you run...                          | Use this path                               | Why                                                                   |
 | -------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------- |
-| Single self-hosted `n8n`               | Community Nodes UI                          | Simplest normal install path after npm publish                        |
+| Single self-hosted `n8n`               | Community Nodes UI                          | Preferred default path for most users already familiar with `n8n`     |
+| Local `n8n` on macOS for a smoke test  | Local macOS global npm install              | Fastest way to walk the end-user install path on a Mac without Docker |
 | Single self-hosted `n8n` without GUI   | Manual npm install                          | Direct shell control on the server or container                       |
 | Docker                                 | Published Docker image                      | No repo clone, no in-container npm install, one `docker run` command  |
 | Docker Compose                         | Published Docker image plus Compose         | Same public image, but easier to keep in a repeatable deployment file |
@@ -54,7 +55,7 @@ Use this when:
 
 - the package is already published to npm
 - you run a normal self-hosted `n8n` instance
-- you want the most familiar install path for end users
+- you want the preferred default path for users who already know `n8n`
 
 Steps:
 
@@ -81,7 +82,78 @@ Steps:
 Use this path only after the package is published to npm.
 If the package is not published yet, use tarball install instead.
 
-## Method 2: Manual npm Install On A Server Or Container
+## Method 2: Local macOS Smoke Test With Global npm Install
+
+Use this when:
+
+- you want to walk the same install path as a real self-hosted user
+- you are testing locally on a MacBook or other macOS machine
+- you want to run `n8n` directly from your terminal instead of Docker
+
+This is a local smoke-test path, not the recommended production deployment.
+
+### 2A. Switch To A Supported Node.js Version
+
+The official `n8n` npm install flow requires a supported Node.js runtime.
+If your shell is currently on Node `25`, switch to a supported version first.
+
+Example with `nvm`:
+
+```bash
+nvm use 24.14.1
+```
+
+If that version is not installed yet:
+
+```bash
+nvm install 24.14.1
+nvm use 24.14.1
+```
+
+### 2B. Install And Start `n8n` Locally
+
+Install `n8n` globally, then start it:
+
+```bash
+npm install -g n8n
+n8n start
+```
+
+Leave that terminal window running while you perform the install and UI check.
+
+### 2C. Install The GonkaGate Package
+
+Open a second terminal window and run:
+
+```bash
+mkdir -p ~/.n8n/nodes
+cd ~/.n8n/nodes
+npm install @gonkagate/n8n-nodes-gonkagate@<version>
+```
+
+### 2D. Restart Local `n8n`
+
+If `n8n` was already running before you installed the package:
+
+1. Go back to the terminal where `n8n` is running.
+2. Press `Ctrl+C`.
+3. Start it again:
+
+```bash
+n8n start
+```
+
+### 2E. Verify In The UI
+
+1. Open `http://localhost:5678`.
+2. Create a blank workflow.
+3. Add `Manual Trigger`.
+4. Add the `GonkaGate` node.
+5. Create `GonkaGate API`.
+6. Run `List Models` first.
+7. Then switch to `Chat Completion`.
+
+## Method 3: Manual npm Install On A Server Or Container
 
 Use this when:
 
@@ -89,7 +161,7 @@ Use this when:
 - your instance does not support GUI installation
 - you want a quick operator-managed install without rebuilding an image
 
-### 2A. Manual Install On A Host-Based `n8n`
+### 3A. Manual Install On A Host-Based `n8n`
 
 1. SSH into the machine where `n8n` runs.
 2. Create the community-node directory if needed:
@@ -121,7 +193,7 @@ pm2 restart n8n
 
 5. Open the node picker and search for `GonkaGate`.
 
-### 2B. Manual Install Inside A Docker Container
+### 3B. Manual Install Inside A Docker Container
 
 Use this for a quick install into an existing container.
 For long-lived production, a published or custom Docker image is cleaner.
@@ -159,7 +231,7 @@ docker restart n8n
 
 6. Open the node picker and search for `GonkaGate`.
 
-## Method 3: Published Docker Image
+## Method 4: Published Docker Image
 
 Use this when:
 
@@ -213,12 +285,12 @@ docker logs -f n8n
 
 Open `http://localhost:5678`, then search for `GonkaGate`.
 
-## Method 4: Docker Compose With The Published Image
+## Method 5: Docker Compose With The Published Image
 
 Use this when:
 
 - you prefer a repeatable Compose file
-- you want the same public image path as Method 3
+- you want the same public image path as Method 4
 - you want an install path that users can copy into any deployment folder
 
 This repository includes a ready example in
@@ -265,7 +337,7 @@ docker compose logs -f n8n
 
 Open the node picker and search for `GonkaGate`.
 
-## Method 5: Custom Docker Image From This Repository
+## Method 6: Custom Docker Image From This Repository
 
 Use this when:
 
@@ -323,7 +395,7 @@ Add your own database, Redis, reverse-proxy, and secrets settings as needed.
 
 Open `http://localhost:5678`, then search for `GonkaGate`.
 
-## Method 6: Docker Compose In An Existing Stack
+## Method 7: Docker Compose In An Existing Stack
 
 Use this when:
 
@@ -334,8 +406,8 @@ Use this when:
 
 Use either:
 
-- the published image from Method 3 or Method 4
-- your own custom image from Method 5
+- the published image from Method 4 or Method 5
+- your own custom image from Method 6
 
 ### Step 2. Update `docker-compose.yml`
 
@@ -386,7 +458,7 @@ docker compose up -d
 
 Open the node picker and search for `GonkaGate`.
 
-## Method 7: Queue Mode / Workers / Webhook Runtimes
+## Method 8: Queue Mode / Workers / Webhook Runtimes
 
 Use this when:
 
@@ -439,7 +511,7 @@ Do not update only the main UI process while workers still run the old image.
 Once the main UI is up, search for `GonkaGate` and run the normal post-install
 verification flow.
 
-## Method 8: Tarball Install For Staging Or Unpublished Builds
+## Method 9: Tarball Install For Staging Or Unpublished Builds
 
 Use this when:
 
@@ -494,7 +566,7 @@ Restart the main process and any workers that execute workflows.
 
 Search for `GonkaGate` in the node picker.
 
-## Method 9: Local Development In This Repository
+## Method 10: Local Development In This Repository
 
 Use this when:
 
