@@ -37,7 +37,11 @@ These are not stored in the git tree, so verify them in GitHub/npm settings:
 3. The GitHub Actions environment named `release` exists and allows the publish
    jobs to run.
 4. GHCR package publishing is allowed for this repository.
-5. After the first successful Docker publish, set the GHCR package visibility
+5. The organization package settings allow public container packages. If the
+   package visibility switch is disabled on the package page, ask an
+   organization owner to enable public packages in GitHub organization package
+   settings first.
+6. After the first successful Docker publish, set the GHCR package visibility
    to `public` if GitHub created it as private.
 
 ## Repo Checks
@@ -73,10 +77,12 @@ docker build -f Dockerfile.local -t gonkagate-n8n:local-check .
 ```
 
 6. If the target package version is already published to npm, validate the
-   release Dockerfile path too:
+   release Dockerfile path and confirm the image actually registers the
+   GonkaGate nodes:
 
 ```bash
 docker build --build-arg GONKAGATE_NODE_VERSION=<published-version> -t gonkagate-n8n:release-check .
+npm run check:docker-image-smoke -- --image gonkagate-n8n:release-check
 ```
 
 7. Confirm onboarding docs still match the current node behavior:
@@ -136,7 +142,8 @@ Before tagging:
    - `n8n` Cloud is not claimed
 4. Confirm the published image still installs
    `@gonkagate/n8n-nodes-gonkagate@<released-version>` into the official `n8n`
-   image.
+   image and that a fresh container exports both `GonkaGate` and
+   `GonkaGate Chat Model`.
 5. Confirm the source-build path in `Dockerfile.local` still works for local
    smoke builds and unpublished package changes.
 6. Confirm the Docker example still starts from the published image and pins
