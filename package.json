@@ -27,6 +27,7 @@
 		"build": "n8n-node build",
 		"build:watch": "tsc --watch",
 		"check:bootstrap": "node scripts/check-bootstrap.mjs",
+		"check:docker-image-smoke": "node scripts/check-docker-image-smoke.mjs",
 		"check:publish-context": "node scripts/check-publish-context.mjs",
 		"check:self-hosted-smoke": "node scripts/check-self-hosted-smoke.mjs",
 		"dev": "n8n-node dev",
