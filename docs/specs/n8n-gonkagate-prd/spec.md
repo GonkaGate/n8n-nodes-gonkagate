@@ -72,8 +72,9 @@ Secondary builder:
 
 - community nodes are npm packages
 - community packages can expose AI-language-model nodes
-- current `n8n` AI Node SDK is preview-only
-- official SDK guidance says AI nodes are not yet accepted for verification
+- verified-node approval remains controlled by `n8n` review
+- current published docs do not guarantee approval for any specific package
+  shape before Creator Portal review completes
 
 ### Product constraints
 
@@ -189,8 +190,8 @@ Not claimed:
 2. Keep docs and package metadata aligned with actual node surfaces.
 3. Preserve upstream request identifiers and meaningful error messages where
    possible.
-4. Keep the package self-hosted-first while `n8n`'s AI SDK remains preview-only
-   for verification.
+4. Keep the package self-hosted-first until verified-node approval is actually
+   granted.
 5. Keep the compatibility posture evidence-based rather than aspirational.
 
 ## Current Shipped Shape
@@ -224,8 +225,8 @@ Not claimed:
   durable provider-owned identity will get weaker.
 - If live model discovery is treated as authoritative, the UX will degrade when
   GonkaGate returns an empty model list.
-- If the package is described as verification-ready while the AI SDK is still
-  preview-only, repository truth will drift from platform reality.
+- If the package is described as already verified before `n8n` approves it,
+  repository truth will drift from platform reality.
 
 ## Product Summary
 

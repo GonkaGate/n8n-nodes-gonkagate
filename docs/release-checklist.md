@@ -64,19 +64,25 @@ npm run lint:n8n
 npm run test:unit
 ```
 
-4. Produce a release tarball and verify the package contents:
+4. Confirm the in-repo cloud-support posture is still strict and enabled:
+
+```bash
+npx n8n-node cloud-support
+```
+
+5. Produce a release tarball and verify the package contents:
 
 ```bash
 npm pack --dry-run
 ```
 
-5. Build the local source-based Docker image used by CI:
+6. Build the local source-based Docker image used by CI:
 
 ```bash
 docker build -f Dockerfile.local -t gonkagate-n8n:local-check .
 ```
 
-6. If the target package version is already published to npm, validate the
+7. If the target package version is already published to npm, validate the
    release Dockerfile path and confirm the image actually registers the
    GonkaGate nodes:
 
@@ -85,7 +91,7 @@ docker build --build-arg GONKAGATE_NODE_VERSION=<published-version> -t gonkagate
 npm run check:docker-image-smoke -- --image gonkagate-n8n:release-check
 ```
 
-7. Confirm onboarding docs still match the current node behavior:
+8. Confirm onboarding docs still match the current node behavior:
 
 - [README.md](../README.md)
 - [Quickstart](./quickstart.md)
@@ -127,6 +133,9 @@ against a real GonkaGate backend with a working API key:
    streaming-capable workflow path such as `AI Agent` plus `Chat Trigger`.
 7. Save the concrete `n8n` and GonkaGate evidence in the compatibility docs.
 
+If a maintainer completed those checks outside this workspace, record the exact
+validation date and environment details before the verified submission handoff.
+
 ## Release Surface
 
 Before tagging:
@@ -152,5 +161,23 @@ Before tagging:
    steps described in the docs.
 8. Confirm the compatibility matrix does not overclaim beyond the tested
    versions and live proof actually collected.
-9. Do not describe the package as verified-node-ready while the current AI node
-   SDK remains preview-only for verification.
+9. Do not describe the package as already verified until `n8n` approves the
+   Creator Portal submission.
+
+## Verified Submission Handoff
+
+Once the release version is published to npm:
+
+1. Confirm the published package still passes the external package scan:
+
+```bash
+npx @n8n/scan-community-package @gonkagate/n8n-nodes-gonkagate
+```
+
+2. Confirm the version you plan to submit was published through
+   `.github/workflows/publish.yml` with provenance enabled.
+3. Confirm the maintainer live-validation notes are attached to the submission
+   handoff.
+4. Submit the package in the `n8n` Creator Portal.
+5. Keep all public copy at "submission-ready" until `n8n` marks the package as
+   verified.
