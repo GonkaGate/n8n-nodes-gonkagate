@@ -19,6 +19,14 @@
 - Refresh the README, specs, compatibility docs, fallback guidance, and release
   docs to the new two-surface package truth.
 
+## [0.2.4](https://github.com/GonkaGate/n8n-nodes-gonkagate/compare/v0.2.3...v0.2.4) (2026-04-08)
+
+
+### Bug Fixes
+
+* **verification:** prepare package for verified submission ([aa86160](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/aa86160b28b0bbfaf08010106591f6f3db689035))
+* **verification:** prepare package for verified submission ([6f0fb4c](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/6f0fb4cfd0c56f58b0ae940078cd97ee752298fd))
+
 ## [0.2.3](https://github.com/GonkaGate/n8n-nodes-gonkagate/compare/v0.2.2...v0.2.3) (2026-04-07)
 
 
