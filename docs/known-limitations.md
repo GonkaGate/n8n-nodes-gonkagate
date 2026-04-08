@@ -12,16 +12,19 @@ Current package limitations:
   can return an empty set
 - capability-aware model filtering is conservative and metadata-limited; the
   picker does not claim a perfect feature matrix
-- AI Agent / tool-calling-heavy paths are not yet live-validated from this
-  workspace against a real GonkaGate key
-- self-hosted-first posture only; `n8n` Cloud is not promised
-- the current `n8n` AI Node SDK is preview-only and AI nodes are not yet
-  accepted for verification
+- AI Agent / tool-calling-heavy paths do not yet have broad, versioned public
+  evidence beyond maintainer validation
+- self-hosted-first posture only; `n8n` Cloud is not promised until verified
+  submission is approved
+- verified status is not approved yet; Creator Portal review remains external
+  to this repository
 - credentials created with the legacy placeholder base URL must be recreated
 
-Current repo-level blockers that still affect release readiness:
+Current repo-level caveats that still affect verified approval:
 
-- no API-key-backed live GonkaGate validation run was executed from this
-  workspace
 - self-hosted compatibility proof remains narrow and version-specific until the
   documented smoke matrix is rerun after packaging changes
+- exact live-validation environment details should be recorded in public docs if
+  you want a versioned audit trail for the verified submission
+- final approved verified status still depends on `n8n` review after
+  submission

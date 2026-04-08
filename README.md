@@ -88,6 +88,25 @@ Use the [Installation Guide](./docs/install.md) if you need one of these:
 | `GonkaGate`            | You want the fastest first request, `List Models`, or easier setup |
 | `GonkaGate Chat Model` | You are building `AI Agent` or other `AiLanguageModel` workflows   |
 
+## Credentials
+
+`GonkaGate API` is the shared credential for both node surfaces.
+Users normally only enter an API key. The canonical GonkaGate base URL stays
+hidden and defaults to `https://api.gonkagate.com/v1`.
+
+If you still have credentials created before the canonical hidden default was
+added, recreate them before chasing other auth issues.
+
+## GonkaGate Chat Model
+
+`GonkaGate Chat Model` is the additive AI-model surface inside the same package.
+It reuses `GonkaGate API`, the same live model discovery path, and the same
+manual `Model ID` fallback as the root node.
+
+Use it when you are building `AI Agent` or other `AiLanguageModel` workflows.
+For first-time validation, start with the plain root node `GonkaGate` and move
+to the chat-model surface after auth and model selection are already proven.
+
 ## What Works Today
 
 - `GonkaGate` with `List Models`
@@ -102,7 +121,8 @@ Use the [Installation Guide](./docs/install.md) if you need one of these:
 - no `/v1/responses` support
 - no blanket `n8n` version support claim
 - self-hosted first only, with no `n8n` Cloud promise
-- no verified-node eligibility claim
+- no verified-node approval yet; submission readiness does not equal Creator
+  Portal approval
 - root-node `Chat Completion` returns one final JSON response instead of visible
   live streaming
 - `GonkaGate Chat Model` is the better fit for streaming-capable AI workflows,

@@ -7,5 +7,5 @@
 		"sourceMap": false,
 		"incremental": false
 	},
-	"include": ["credentials/**/*", "nodes/**/*", "shared/**/*", "tests/**/*.test.ts"]
+	"include": ["credentials/**/*", "nodes/**/*", "shared/**/*", "tests/**/*.test.tsx"]
 }
