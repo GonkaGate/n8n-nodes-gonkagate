@@ -1,18 +1,23 @@
 # GonkaGate for n8n
 
-`@gonkagate/n8n-nodes-gonkagate` is the GonkaGate community node package for
-self-hosted `n8n`.
+Install the GonkaGate community nodes for self-hosted `n8n`.
 
-Use it if you want a GonkaGate-first integration instead of wiring stock
-OpenAI-compatible nodes by hand. The package gives you:
+Use this package name in `n8n` Community Nodes:
 
-- the root node `GonkaGate`
-- the additive AI model node `GonkaGate Chat Model`
-- the shared credential `GonkaGate API`
+```text
+@gonkagate/n8n-nodes-gonkagate
+```
 
-Today the package targets GonkaGate's OpenAI-compatible
-`GET /v1/models` and `POST /v1/chat/completions` surface, with the canonical
-base URL fixed to `https://api.gonkagate.com/v1`.
+![Package](https://img.shields.io/badge/package-%40gonkagate%2Fn8n--nodes--gonkagate-6E63FF?style=flat-square)
+![n8n](https://img.shields.io/badge/n8n-self--hosted-F97316?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-2A2A2A?style=flat-square)
+
+[![Website](https://img.shields.io/badge/Website-gonkagate.com-111827?style=flat-square)](https://gonkagate.com/en)
+[![Docs](https://img.shields.io/badge/Docs-API%20Guides-2563EB?style=flat-square)](https://gonkagate.com/en/docs)
+[![API%20Key](https://img.shields.io/badge/API%20Key-Dashboard-F97316?style=flat-square)](https://gonkagate.com/en/register)
+[![Telegram](https://img.shields.io/badge/Telegram-%40gonkagate-229ED9?style=flat-square&logo=telegram&logoColor=white)](https://t.me/gonkagate)
+[![X](https://img.shields.io/badge/X-%40gonkagate-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/gonkagate)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-GonkaGate-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/gonkagate)
 
 ## Install
 
@@ -46,6 +51,22 @@ From Community Nodes install to a working GonkaGate node in one short
 walkthrough:
 
 [![Install GonkaGate in n8n](https://raw.githubusercontent.com/GonkaGate/n8n-nodes-gonkagate/main/.github/assets/gonkagate-n8n-demo.gif)](https://raw.githubusercontent.com/GonkaGate/n8n-nodes-gonkagate/main/.github/assets/gonkagate-n8n-demo.mp4)
+
+## Overview
+
+`@gonkagate/n8n-nodes-gonkagate` is the GonkaGate community node package for
+self-hosted `n8n`.
+
+Use it if you want a GonkaGate-first integration instead of wiring stock
+OpenAI-compatible nodes by hand. The package gives you:
+
+- the root node `GonkaGate`
+- the additive AI model node `GonkaGate Chat Model`
+- the shared credential `GonkaGate API`
+
+Today the package targets GonkaGate's OpenAI-compatible `GET /v1/models` and
+`POST /v1/chat/completions` surface, with the canonical base URL fixed to
+`https://api.gonkagate.com/v1`.
 
 ## First Check
 
