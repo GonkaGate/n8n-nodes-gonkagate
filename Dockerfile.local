@@ -3,10 +3,13 @@ ARG N8N_VERSION=2.14.2
 
 FROM node:${NODE_VERSION}-bookworm-slim AS builder
 
+ARG NPM_VERSION=11.11.1
+
 WORKDIR /workspace
 
 COPY . .
 
+RUN npm install -g npm@${NPM_VERSION}
 RUN npm ci
 RUN npm run build
 RUN npm pack
