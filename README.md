@@ -85,8 +85,9 @@ categories`.
 10. Create `GonkaGate API`, paste your API key, and save.
 11. Click `Execute step` or `Execute workflow`.
 
-If that works, change the same node to `Chat Completion`, choose a model, and
-run one short test message.
+If that works, change the same node to `Chat Completion` and run one short
+test message. The recommended default model is `moonshotai/Kimi-K2.6`; switch
+to the live model list only if you want to choose a different model.
 
 For the full click-by-click flow, continue with
 [Quickstart](./docs/quickstart.md).

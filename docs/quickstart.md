@@ -77,11 +77,10 @@ and can authenticate successfully.
 After `List Models` works:
 
 1. Change `Operation` to `Chat Completion`.
-2. Try the live model list first.
-3. If the list is empty or unavailable, switch the model field to `ID`.
-4. Enter a known-good model ID manually if needed.
-5. Leave one simple user message such as `Hello from n8n`.
-6. Run the node again.
+2. Keep the recommended default model ID: `moonshotai/Kimi-K2.6`.
+3. Switch to the live model list only if you want to choose a different model.
+4. Leave one simple user message such as `Hello from n8n`.
+5. Run the node again.
 
 If everything is configured correctly, the `GonkaGate` node should return one
 final JSON response from `POST /v1/chat/completions`.

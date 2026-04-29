@@ -4,6 +4,8 @@ import { GONKAGATE_MODEL_SEARCH_METHOD_NAME } from './identifiers';
 import { searchGonkaGateModels } from './modelDiscovery';
 import { GONKAGATE_MODEL_PARAMETER_NAME } from './parameters';
 
+export const GONKAGATE_RECOMMENDED_MODEL_ID = 'moonshotai/Kimi-K2.6';
+
 export function createGonkaGateModelSearchMethods() {
 	return {
 		listSearch: {
@@ -22,8 +24,8 @@ export function createGonkaGateModelSelectorProperty(
 		name: GONKAGATE_MODEL_PARAMETER_NAME,
 		type: 'resourceLocator',
 		default: {
-			mode: 'list',
-			value: '',
+			mode: 'id',
+			value: GONKAGATE_RECOMMENDED_MODEL_ID,
 		},
 		required: true,
 		displayOptions,
@@ -52,7 +54,7 @@ export function createGonkaGateModelSelectorProperty(
 				displayName: 'ID',
 				name: 'id',
 				type: 'string',
-				placeholder: 'model-ID',
+				placeholder: GONKAGATE_RECOMMENDED_MODEL_ID,
 			},
 		],
 	};

@@ -615,8 +615,8 @@ After any install method:
 If that works, run one more check:
 
 1. Change `Operation` to `Chat Completion`.
-2. Pick a model from the live list.
-3. If the list is empty, switch to manual `ID` mode.
+2. Keep the recommended default model ID: `moonshotai/Kimi-K2.6`.
+3. Switch to the live model list only if you want to choose a different model.
 4. Leave one short test message.
 5. Run the node again.
 

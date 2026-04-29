@@ -8,6 +8,7 @@ import {
 	buildGonkaGateModelSearchResults,
 	searchGonkaGateModels,
 } from '../shared/GonkaGate/modelDiscovery';
+import { GONKAGATE_RECOMMENDED_MODEL_ID } from '../shared/GonkaGate/modelParameter';
 import {
 	buildGonkaGateModelDisplayDescription,
 	buildGonkaGateModelDisplayName,
@@ -95,6 +96,14 @@ test('resolveGonkaGateModelId accepts manual strings and resource locator values
 	assert.equal(
 		resolveGonkaGateModelId(createTestNode(), createModelResourceLocator('picked-model'), 0),
 		'picked-model',
+	);
+	assert.equal(
+		resolveGonkaGateModelId(
+			createTestNode(),
+			createModelResourceLocator(GONKAGATE_RECOMMENDED_MODEL_ID),
+			0,
+		),
+		GONKAGATE_RECOMMENDED_MODEL_ID,
 	);
 });
 
