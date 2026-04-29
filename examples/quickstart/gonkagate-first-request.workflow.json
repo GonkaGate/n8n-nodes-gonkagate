@@ -14,8 +14,8 @@
 				"operation": "chatCompletion",
 				"model": {
 					"__rl": true,
-					"mode": "list",
-					"value": ""
+					"mode": "id",
+					"value": "moonshotai/Kimi-K2.6"
 				},
 				"messages": "[\n  {\n    \"role\": \"user\",\n    \"content\": \"Hello from n8n and GonkaGate\"\n  }\n]"
 			},

@@ -24,6 +24,7 @@ import {
 	GONKAGATE_NODE_DISPLAY_NAME,
 	GONKAGATE_ROOT_NODE_DOCUMENTATION_URL,
 } from '../shared/GonkaGate/metadata';
+import { GONKAGATE_RECOMMENDED_MODEL_ID } from '../shared/GonkaGate/modelParameter';
 
 type NodeManifest = {
 	resources?: {
@@ -102,6 +103,10 @@ test('operation selector and model discovery wiring stay aligned with registered
 		modelProperty?.modes?.[0]?.typeOptions?.searchListMethod,
 		GONKAGATE_MODEL_SEARCH_METHOD_NAME,
 	);
+	assert.deepEqual(modelProperty?.default, {
+		mode: 'id',
+		value: GONKAGATE_RECOMMENDED_MODEL_ID,
+	});
 });
 
 function readNodeManifest(relativePath: string): NodeManifest {
