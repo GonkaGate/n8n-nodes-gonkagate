@@ -19,6 +19,19 @@
 - Refresh the README, specs, compatibility docs, fallback guidance, and release
   docs to the new two-surface package truth.
 
+## [0.3.0](https://github.com/GonkaGate/n8n-nodes-gonkagate/compare/v0.2.4...v0.3.0) (2026-04-29)
+
+
+### Features
+
+* **models:** default to Kimi K2.6 model ID ([aa9f12b](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/aa9f12bcf584ec9a1517b87e306c1ee3d395ec3a))
+* **models:** default to Kimi K2.6 model ID ([a4be5d2](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/a4be5d24baedcaed72a599c083fc467087f76c5a))
+
+
+### Bug Fixes
+
+* **docker:** pin npm for source image builds ([94da7b9](https://github.com/GonkaGate/n8n-nodes-gonkagate/commit/94da7b900ad1baf18fd3b26ce0b4a5b3d34f6bfd))
+
 ## [0.2.4](https://github.com/GonkaGate/n8n-nodes-gonkagate/compare/v0.2.3...v0.2.4) (2026-04-08)
 
 
