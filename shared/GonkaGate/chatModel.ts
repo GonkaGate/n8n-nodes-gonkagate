@@ -53,7 +53,7 @@ export function createGonkaGateChatModelSupplier(
 			operationName: GONKAGATE_CHAT_MODEL_DISPLAY_NAME,
 			run: async () => {
 				const credentials = await context.getCredentials(GONKAGATE_CREDENTIAL_NAME, itemIndex);
-				const chatParameters = resolveGonkaGateChatParametersFromContext(context, itemIndex);
+				const chatParameters = await resolveGonkaGateChatParametersFromContext(context, itemIndex);
 
 				return await supplyModelDependency(
 					context,

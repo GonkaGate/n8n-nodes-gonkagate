@@ -2,14 +2,21 @@ import type { IExecuteFunctions, INode } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
 import { resolveGonkaGateChatOptions, type GonkaGateChatOptionValues } from './chatOptions';
-import { resolveGonkaGateModelId } from './modelId';
+import { resolveGonkaGateModelId, resolveGonkaGateModelIdWithLiveDefault } from './modelId';
 import {
 	GONKAGATE_MODEL_PARAMETER_NAME,
 	GONKAGATE_OPTIONS_PARAMETER_NAME,
 	GONKAGATE_STREAMING_PARAMETER_NAME,
 } from './parameters';
+import type { GonkaGateRequestContext } from './request';
 
-export type GonkaGateNodeParameterContext = Pick<IExecuteFunctions, 'getNode' | 'getNodeParameter'>;
+// Reading the model parameter can reach GET /v1/models for the live default, so
+// the parameter context also carries the shared request seam.
+export type GonkaGateNodeParameterContext = Pick<
+	IExecuteFunctions,
+	'getNode' | 'getNodeParameter'
+> &
+	GonkaGateRequestContext;
 
 export type GonkaGateChatParameterValues = {
 	node: INode;
@@ -26,17 +33,21 @@ export type ResolvedGonkaGateChatParameters = {
 	aiModelOptions: GonkaGateChatOptionValues;
 };
 
-export function readGonkaGateChatParameterValuesFromContext(
+export async function readGonkaGateChatParameterValuesFromContext(
 	context: GonkaGateNodeParameterContext,
 	itemIndex: number,
 	input: {
 		rawStreaming?: unknown;
 		defaultStreaming?: boolean;
 	} = {},
-): GonkaGateChatParameterValues {
+): Promise<GonkaGateChatParameterValues> {
 	return {
 		node: context.getNode(),
-		rawModel: context.getNodeParameter(GONKAGATE_MODEL_PARAMETER_NAME, itemIndex),
+		rawModel: await resolveGonkaGateModelIdWithLiveDefault(
+			context,
+			context.getNodeParameter(GONKAGATE_MODEL_PARAMETER_NAME, itemIndex),
+			itemIndex,
+		),
 		rawOptions: context.getNodeParameter(GONKAGATE_OPTIONS_PARAMETER_NAME, itemIndex, {}),
 		rawStreaming:
 			input.rawStreaming ??
@@ -49,16 +60,16 @@ export function readGonkaGateChatParameterValuesFromContext(
 	};
 }
 
-export function resolveGonkaGateChatParametersFromContext(
+export async function resolveGonkaGateChatParametersFromContext(
 	context: GonkaGateNodeParameterContext,
 	itemIndex: number,
 	input: {
 		rawStreaming?: unknown;
 		defaultStreaming?: boolean;
 	} = {},
-): ResolvedGonkaGateChatParameters {
+): Promise<ResolvedGonkaGateChatParameters> {
 	return resolveGonkaGateChatParameters(
-		readGonkaGateChatParameterValuesFromContext(context, itemIndex, input),
+		await readGonkaGateChatParameterValuesFromContext(context, itemIndex, input),
 	);
 }
 

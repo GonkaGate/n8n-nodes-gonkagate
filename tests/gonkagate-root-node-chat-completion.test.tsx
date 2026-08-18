@@ -7,7 +7,10 @@ import {
 	createRecoverableTimeoutError,
 	executeGonkaGateRootNode,
 } from './helpers/createGonkaGateRootNodeTestData';
-import { GONKAGATE_CHAT_COMPLETIONS_PATH } from '../shared/GonkaGate/constants';
+import {
+	GONKAGATE_CHAT_COMPLETIONS_PATH,
+	GONKAGATE_MODELS_PATH,
+} from '../shared/GonkaGate/constants';
 import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
 import { GONKAGATE_MODEL_PARAMETER_NAME } from '../shared/GonkaGate/parameters';
 
@@ -59,6 +62,43 @@ test('GonkaGate.execute composes the shared request contract at the node boundar
 			},
 		],
 	]);
+});
+
+test('GonkaGate.execute sends the first live catalog model when Model is left empty', async () => {
+	const requests: Array<{ url?: string; body?: unknown }> = [];
+
+	await executeGonkaGateRootNode({
+		itemParameters: [
+			createChatCompletionItemParameters({
+				[GONKAGATE_MODEL_PARAMETER_NAME]: { __rl: true, mode: 'list', value: '' },
+			}),
+		],
+		httpRequestWithAuthentication: async (_credentialType, requestOptions) => {
+			requests.push({ url: requestOptions.url, body: requestOptions.body });
+
+			if (requestOptions.url === GONKAGATE_MODELS_PATH) {
+				return {
+					object: 'list',
+					data: [
+						{ id: 'gonka/first-listed', object: 'model', created: 0, owned_by: 'gonka' },
+						{ id: 'gonka/second-listed', object: 'model', created: 0, owned_by: 'gonka' },
+					],
+				};
+			}
+
+			return { id: 'chatcmpl_live_default', object: 'chat.completion' };
+		},
+	});
+
+	assert.deepEqual(
+		requests.map((request) => request.url),
+		[GONKAGATE_MODELS_PATH, GONKAGATE_CHAT_COMPLETIONS_PATH],
+	);
+	assert.deepEqual(requests[1].body, {
+		model: 'gonka/first-listed',
+		messages: [{ role: 'user', content: 'Hello from n8n' }],
+		stream: false,
+	});
 });
 
 test('GonkaGate.execute serializes recoverable upstream failures when continueOnFail is enabled', async () => {

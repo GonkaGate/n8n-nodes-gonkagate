@@ -38,11 +38,11 @@ export function buildGonkaGateChatCompletionRequestBody(input: {
 	});
 }
 
-export function buildGonkaGateChatCompletionRequestBodyFromContext(
+export async function buildGonkaGateChatCompletionRequestBodyFromContext(
 	context: GonkaGateNodeParameterContext,
 	itemIndex: number,
-): GonkaGateChatCompletionRequestBody {
-	const parameterValues = readGonkaGateChatParameterValuesFromContext(context, itemIndex, {
+): Promise<GonkaGateChatCompletionRequestBody> {
+	const parameterValues = await readGonkaGateChatParameterValuesFromContext(context, itemIndex, {
 		rawStreaming: false,
 	});
 	const rawMessages = context.getNodeParameter(GONKAGATE_MESSAGES_PARAMETER_NAME, itemIndex);

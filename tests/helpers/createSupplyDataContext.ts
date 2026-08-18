@@ -1,4 +1,4 @@
-import type { ISupplyDataFunctions } from 'n8n-workflow';
+import type { ILoadOptionsFunctions, ISupplyDataFunctions } from 'n8n-workflow';
 
 import type { GonkaGateCredentialData } from '../../shared/GonkaGate/credentials';
 import { GONKAGATE_CREDENTIAL_NAME } from '../../shared/GonkaGate/identifiers';
@@ -9,6 +9,9 @@ import {
 	createSingleItemTestNodeParameterResolver,
 } from './testContextAccess';
 
+type HttpRequestWithAuthentication =
+	ILoadOptionsFunctions['helpers']['httpRequestWithAuthentication'];
+
 export type SupplyDataContextOptions = {
 	credentials: GonkaGateCredentialData;
 	parameters: Record<string, unknown>;
@@ -18,11 +21,15 @@ export type SupplyDataContextOptions = {
 		credentialName: string,
 		itemIndex: number,
 	) => Promise<GonkaGateCredentialData> | GonkaGateCredentialData;
+	httpRequestWithAuthentication?: HttpRequestWithAuthentication;
 };
 type SupplyDataContextMock = {
 	getCredentials(credentialName: string, itemIndex: number): Promise<GonkaGateCredentialData>;
 	getNode(): ReturnType<typeof createTestNode>;
 	getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown): unknown;
+	helpers: {
+		httpRequestWithAuthentication: HttpRequestWithAuthentication;
+	};
 };
 
 export function createSupplyDataContext(options: SupplyDataContextOptions): ISupplyDataFunctions {
@@ -43,6 +50,13 @@ export function createSupplyDataContext(options: SupplyDataContextOptions): ISup
 		},
 		getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: unknown) {
 			return resolveNodeParameter(parameterName, itemIndex, fallbackValue);
+		},
+		helpers: {
+			httpRequestWithAuthentication:
+				options.httpRequestWithAuthentication ??
+				(async () => {
+					throw new Error('httpRequestWithAuthentication was not expected in this test');
+				}),
 		},
 	} satisfies SupplyDataContextMock;
 

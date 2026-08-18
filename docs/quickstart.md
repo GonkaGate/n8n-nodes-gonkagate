@@ -77,8 +77,10 @@ and can authenticate successfully.
 After `List Models` works:
 
 1. Change `Operation` to `Chat Completion`.
-2. Keep the recommended default model ID: `moonshotai/Kimi-K2.6`.
-3. Switch to the live model list only if you want to choose a different model.
+2. Leave `Model` empty to use the first model GonkaGate returns from
+   `GET /v1/models`.
+3. Pick a specific model from the live list, or switch to `ID` mode and type a
+   Model ID, if you do not want that default.
 4. Leave one simple user message such as `Hello from n8n`.
 5. Run the node again.
 
@@ -98,6 +100,8 @@ This example already includes:
 - `GonkaGate`
 - `Chat Completion`
 - a starter user message
+- an empty `Model` field, so the request uses the first model in the live
+  `GET /v1/models` response instead of a model id baked into the example
 
 ## Expected Successful Result
 
@@ -157,6 +161,8 @@ Once the root node works, your next most useful steps are:
 
 - This can happen because `/v1/models` may return an empty set.
 - Switch the model field to `ID` mode and enter a manual model ID.
+- An empty `Model` field also fails with `Model ID is required` in this case,
+  because the default is taken from that same live response.
 
 ### The credential fails immediately
 

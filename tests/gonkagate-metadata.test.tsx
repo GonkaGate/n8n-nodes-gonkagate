@@ -24,7 +24,7 @@ import {
 	GONKAGATE_NODE_DISPLAY_NAME,
 	GONKAGATE_ROOT_NODE_DOCUMENTATION_URL,
 } from '../shared/GonkaGate/metadata';
-import { GONKAGATE_RECOMMENDED_MODEL_ID } from '../shared/GonkaGate/modelParameter';
+import { GONKAGATE_MODEL_SELECTOR_DEFAULT } from '../shared/GonkaGate/modelParameter';
 
 type NodeManifest = {
 	resources?: {
@@ -104,9 +104,33 @@ test('operation selector and model discovery wiring stay aligned with registered
 		GONKAGATE_MODEL_SEARCH_METHOD_NAME,
 	);
 	assert.deepEqual(modelProperty?.default, {
-		mode: 'id',
-		value: GONKAGATE_RECOMMENDED_MODEL_ID,
+		mode: 'list',
+		value: '',
 	});
+	assert.deepEqual(GONKAGATE_MODEL_SELECTOR_DEFAULT, {
+		mode: 'list',
+		value: '',
+	});
+	// An empty default is only reachable while the property stays optional: n8n
+	// reports an empty required resourceLocator as a blocking node issue.
+	assert.equal(modelProperty?.required, false);
+});
+
+test('both node surfaces ship an empty model default instead of a checked-in model id', () => {
+	const modelProperties = [
+		...new GonkaGate().description.properties,
+		...new LmChatGonkaGate().description.properties,
+	].filter((property) => property.name === 'model');
+
+	assert.equal(modelProperties.length, 2);
+
+	for (const modelProperty of modelProperties) {
+		assert.deepEqual(modelProperty.default, {
+			mode: 'list',
+			value: '',
+		});
+		assert.equal(modelProperty.required, false);
+	}
 });
 
 function readNodeManifest(relativePath: string): NodeManifest {

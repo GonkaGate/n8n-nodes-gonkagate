@@ -20,7 +20,7 @@ export async function executeChatCompletion(
 	context: IExecuteFunctions,
 	itemIndex: number,
 ): Promise<INodeExecutionData[]> {
-	const requestBody = buildGonkaGateChatCompletionRequestBodyFromContext(context, itemIndex);
+	const requestBody = await buildGonkaGateChatCompletionRequestBodyFromContext(context, itemIndex);
 
 	return await executeGonkaGateJsonAction(async () =>
 		requestGonkaGateChatCompletionResponse(context, requestBody, {

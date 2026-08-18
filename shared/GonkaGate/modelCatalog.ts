@@ -17,11 +17,12 @@ export type GonkaGateModelRecord = IDataObject & {
 export function parseGonkaGateModelCatalog(
 	response: GonkaGateModelsResponse,
 ): GonkaGateModelRecord[] {
+	// GET /v1/models owns catalog order. The first usable entry is the default
+	// model for both node surfaces, so the client must not re-rank the list.
 	return response.data
 		.filter(isRecord)
 		.map((model) => toModelRecord(model))
-		.filter((model): model is GonkaGateModelRecord => model !== null)
-		.sort(compareModels);
+		.filter((model): model is GonkaGateModelRecord => model !== null);
 }
 
 export function buildGonkaGateModelDisplayName(model: GonkaGateModelRecord): string {
@@ -66,45 +67,50 @@ function toModelRecord(model: Record<string, unknown>): GonkaGateModelRecord | n
 		return null;
 	}
 
+	// Older gateways omit the optional catalog metadata entirely and newer ones
+	// may send `null` for it. Keep the declared optional fields out of the raw
+	// passthrough so a `null` can never survive behind an optional typed field,
+	// then add back only the values that are usable.
+	const { name, description, created, pricing, ...passthroughFields } = model;
 	const record: GonkaGateModelRecord = {
-		...model,
+		...passthroughFields,
 		id,
 	};
+	const modelName = readNonEmptyString(name);
+	const modelDescription = readNonEmptyString(description);
+	const modelCreated = readFiniteNumber(created);
 
-	if (typeof model.name === 'string' && model.name.trim().length > 0) {
-		record.name = model.name.trim();
+	if (modelName !== undefined) {
+		record.name = modelName;
 	}
 
-	if (typeof model.description === 'string' && model.description.trim().length > 0) {
-		record.description = model.description.trim();
+	if (modelDescription !== undefined) {
+		record.description = modelDescription;
 	}
 
-	if (typeof model.created === 'number' && Number.isFinite(model.created)) {
-		record.created = model.created;
+	if (modelCreated !== undefined) {
+		record.created = modelCreated;
 	}
 
-	if (isRecord(model.pricing)) {
-		record.pricing = parseGonkaGateDataObjectResponse(model.pricing);
+	if (isRecord(pricing)) {
+		record.pricing = parseGonkaGateDataObjectResponse(pricing);
 	}
 
 	return record;
 }
 
-function compareModels(left: GonkaGateModelRecord, right: GonkaGateModelRecord): number {
-	const leftDeprecated = getBooleanValue(left, 'deprecated') ? 1 : 0;
-	const rightDeprecated = getBooleanValue(right, 'deprecated') ? 1 : 0;
-
-	if (leftDeprecated !== rightDeprecated) {
-		return leftDeprecated - rightDeprecated;
+function readNonEmptyString(value: unknown): string | undefined {
+	if (typeof value !== 'string') {
+		return undefined;
 	}
 
-	const createdDifference = (right.created ?? 0) - (left.created ?? 0);
+	const trimmedValue = value.trim();
 
-	if (createdDifference !== 0) {
-		return createdDifference;
-	}
+	return trimmedValue.length > 0 ? trimmedValue : undefined;
+}
 
-	return left.id.localeCompare(right.id);
+function readFiniteNumber(value: unknown): number | undefined {
+	return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function getModelSearchValues(model: GonkaGateModelRecord): string[] {
@@ -117,16 +123,22 @@ function getModelSearchValues(model: GonkaGateModelRecord): string[] {
 	].filter((value): value is string => typeof value === 'string' && value.length > 0);
 }
 
-function formatContextLength(model: GonkaGateModelRecord): string | undefined {
-	const candidates = [
-		getNumberValue(model, 'context_length'),
-		getNumberValue(model, 'context_window'),
-		getNumberValue(model, 'contextWindow'),
-		getNumberValue(model, 'max_context_tokens'),
-		getNumberValue(model, 'maxContextTokens'),
-	];
+const CONTEXT_LENGTH_KEYS = [
+	'context_length',
+	'contextLength',
+	'context_window',
+	'contextWindow',
+	'max_context_tokens',
+	'maxContextTokens',
+] as const;
 
-	const contextLength = candidates.find((value) => value !== undefined);
+function formatContextLength(model: GonkaGateModelRecord): string | undefined {
+	// Gateways that predate the enriched catalog send none of these keys, and a
+	// gateway that knows no context window may send `null` or `0`. Only a
+	// positive number describes a real context window worth showing.
+	const contextLength = CONTEXT_LENGTH_KEYS.map((key) => readFiniteNumber(model[key])).find(
+		(value) => value !== undefined && value > 0,
+	);
 
 	if (contextLength === undefined) {
 		return undefined;
@@ -172,22 +184,10 @@ function truncate(value: string | undefined, maxLength: number): string | undefi
 	return `${value.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
-function getBooleanValue(record: Record<string, unknown>, key: string): boolean | undefined {
-	const value = record[key];
-
-	return typeof value === 'boolean' ? value : undefined;
-}
-
 function getStringValue(record: Record<string, unknown>, key: string): string | undefined {
 	const value = record[key];
 
 	return typeof value === 'string' && value.length > 0 ? value : undefined;
-}
-
-function getNumberValue(record: Record<string, unknown>, key: string): number | undefined {
-	const value = record[key];
-
-	return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function getStringOrNumberValue(
