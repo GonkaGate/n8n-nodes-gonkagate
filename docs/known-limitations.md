@@ -7,9 +7,15 @@ Current package limitations:
 - the root `GonkaGate` node still uses non-streaming `Chat Completion`
 - the additive `GonkaGate Chat Model` node targets `/v1/chat/completions`, not
   `/v1/responses`
-- live model discovery is helpful, not authoritative
+- `GET /v1/models` is the only source of model ids, names, descriptions, and
+  context windows; the package ships no built-in model catalog and no built-in
+  default model id
+- model metadata beyond `id` is optional on the wire, so gateways that do not
+  publish `name`, `description`, or `context_length` simply show the model id
+  with no extra detail
 - manual `Model ID` fallback remains part of the contract because `/v1/models`
-  can return an empty set
+  can return an empty set; an empty `Model` field then fails with
+  `Model ID is required` instead of guessing an id
 - capability-aware model filtering is conservative and metadata-limited; the
   picker does not claim a perfect feature matrix
 - AI Agent / tool-calling-heavy paths do not yet have broad, versioned public

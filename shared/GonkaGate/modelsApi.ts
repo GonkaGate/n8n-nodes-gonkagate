@@ -56,6 +56,22 @@ export async function fetchGonkaGateModelCatalog(
 	return parseGonkaGateModelCatalog(await requestGonkaGateModelsResponse(context, input));
 }
 
+/**
+ * The default model is positional: the first usable entry of GET /v1/models in
+ * response order. GonkaGate owns that order, so this package keeps no checked-in
+ * default model id and applies no client-side ranking.
+ */
+export async function fetchGonkaGateDefaultModelId(
+	context: GonkaGateModelsRequestContext,
+	input: {
+		itemIndex?: number;
+	} = {},
+): Promise<string | undefined> {
+	const [defaultModel] = await fetchGonkaGateModelCatalog(context, input);
+
+	return defaultModel?.id;
+}
+
 export {
 	parseGonkaGateModelCatalog,
 	type GonkaGateModelRecord,

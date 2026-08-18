@@ -4,9 +4,12 @@ import test from 'node:test';
 import { NodeOperationError } from 'n8n-workflow';
 
 import { createGonkaGateChatModelSupplier } from '../shared/GonkaGate/chatModel';
-import { GONKAGATE_BASE_URL } from '../shared/GonkaGate/constants';
+import { GONKAGATE_BASE_URL, GONKAGATE_MODELS_PATH } from '../shared/GonkaGate/constants';
 import { GONKAGATE_CREDENTIAL_NAME } from '../shared/GonkaGate/identifiers';
-import { GONKAGATE_STREAMING_PARAMETER_NAME } from '../shared/GonkaGate/parameters';
+import {
+	GONKAGATE_MODEL_PARAMETER_NAME,
+	GONKAGATE_STREAMING_PARAMETER_NAME,
+} from '../shared/GonkaGate/parameters';
 import { createChatModelNodeParameters } from './helpers/createGonkaGateChatModelParameters';
 import { createRecoverableTimeoutError } from './helpers/createGonkaGateErrorFixtures';
 import { createSupplyDataContext } from './helpers/createSupplyDataContext';
@@ -73,6 +76,44 @@ test('createGonkaGateChatModelSupplier forwards the GonkaGate chat-model contrac
 	assert.deepEqual(result, {
 		response: { ok: true },
 	});
+});
+
+test('createGonkaGateChatModelSupplier supplies the first live catalog model when Model is empty', async () => {
+	let suppliedModel: unknown;
+	const requestedUrls: unknown[] = [];
+	const supplyGonkaGateChatModel = createGonkaGateChatModelSupplier((_context, model) => {
+		suppliedModel = model;
+
+		return { response: { ok: true } };
+	});
+
+	await supplyGonkaGateChatModel(
+		createSupplyDataContext({
+			credentials: {
+				apiKey: 'test-key',
+				baseUrl: GONKAGATE_BASE_URL,
+			},
+			parameters: {
+				...createChatModelNodeParameters(),
+				[GONKAGATE_MODEL_PARAMETER_NAME]: { __rl: true, mode: 'list', value: '' },
+			},
+			async httpRequestWithAuthentication(_credentialType, requestOptions) {
+				requestedUrls.push(requestOptions.url);
+
+				return {
+					object: 'list',
+					data: [
+						{ id: 'gonka/first-listed', object: 'model', created: 0, owned_by: 'gonka' },
+						{ id: 'gonka/second-listed', object: 'model', created: 0, owned_by: 'gonka' },
+					],
+				};
+			},
+		}),
+		0,
+	);
+
+	assert.deepEqual(requestedUrls, [GONKAGATE_MODELS_PATH]);
+	assert.equal((suppliedModel as { model?: string }).model, 'gonka/first-listed');
 });
 
 test('createGonkaGateChatModelSupplier normalizes supply-time GonkaGate failures', async () => {

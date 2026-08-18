@@ -86,8 +86,9 @@ categories`.
 11. Click `Execute step` or `Execute workflow`.
 
 If that works, change the same node to `Chat Completion` and run one short
-test message. The recommended default model is `moonshotai/Kimi-K2.6`; switch
-to the live model list only if you want to choose a different model.
+test message. Leave `Model` empty to use the first model GonkaGate returns from
+`GET /v1/models`, pick a specific one from the live list, or switch to `ID` mode
+and type a Model ID.
 
 For the full click-by-click flow, continue with
 [Quickstart](./docs/quickstart.md).
@@ -135,7 +136,10 @@ to the chat-model surface after auth and model selection are already proven.
 - `GonkaGate` with non-streaming `Chat Completion`
 - `GonkaGate Chat Model` for `n8n` AI workflows
 - shared `GonkaGate API` credential across both node surfaces
-- live model discovery from `GET /v1/models`
+- live model discovery from `GET /v1/models`, including the display name,
+  description, and context window when the gateway publishes them
+- an empty `Model` field resolves to the first model in the live `GET /v1/models`
+  response, so the package ships no built-in model id
 - manual `Model ID` fallback when the live list is empty or unavailable
 
 ## Current Limits
